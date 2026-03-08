@@ -1,13 +1,11 @@
 // AI Module for Dynamic Question Generation
-// Using fallback questions (AI generation disabled for security)
+// Using backend proxy to hide API keys
 
-// Note: To enable AI generation, add your DeepSeek API key below
-// var DEEPSEEK_API_KEY = 'your-api-key-here';
-// var DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+var USE_AI = true; // Set to true to enable AI generation
+var PROXY_URL = 'http://localhost:3000';
+var AI_PROVIDERS = ['deepseek', 'gemini', 'openai']; // Order of preference
 
-var USE_AI = false; // Set to true with valid API key to enable AI generation
-
-// Fallback question bank (used by default)
+// Fallback question bank (used when AI fails)
 var fallbackQuestions = {
     plumbing: [
         { id: 'plum1', question: 'What is the standard slope for drain pipes?', keywords: ['1/4', '1/8', 'quarter', 'inch', 'foot', 'slope', 'gradient', 'fall'], difficulty: 'basic' },
@@ -53,9 +51,8 @@ var fallbackQuestions = {
     ]
 };
 
-// Generate questions using AI (if enabled)
+// Generate questions using AI (via proxy)
 function generateQuestionsWithAI(category, count, callback) {
-    // If AI is disabled, use fallback
     if (!USE_AI) {
         callback(getFallbackQuestions(category, count));
         return;
@@ -78,61 +75,46 @@ function generateQuestionsWithAI(category, count, callback) {
         'Make questions practical and related to real job scenarios. ' +
         'Return ONLY the JSON array, no other text.';
     
-    fetch(DEEPSEEK_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
-        },
-        body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: [
-                { role: 'system', content: 'You are a job interview question generator.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
+    // Try all providers in parallel, use the first successful response
+    var fetches = AI_PROVIDERS.map(function(provider) {
+        return fetch(PROXY_URL + '/api/' + provider, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
         })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-            try {
-                var content = data.choices[0].message.content;
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            var content = '';
+            if (provider === 'gemini' && data.candidates && data.candidates[0]) {
+                content = data.candidates[0].content.parts[0].text;
+            } else if (data.choices && data.choices[0] && data.choices[0].message) {
+                content = data.choices[0].message.content;
+            }
+            if (content) {
                 var jsonMatch = content.match(/\[[\s\S]*\]/);
                 if (jsonMatch) {
-                    var questions = JSON.parse(jsonMatch[0]);
-                    callback(questions);
-                    return;
+                    return JSON.parse(jsonMatch[0]);
                 }
-            } catch (e) {
-                console.error('Parse error:', e);
             }
-        }
-        // Fallback to local questions
-        callback(getFallbackQuestions(category, count));
-    })
-    .catch(function(error) {
-        console.error('AI generation error:', error);
-        callback(getFallbackQuestions(category, count));
+            throw new Error('No valid content');
+        });
     });
+    Promise.any(fetches)
+        .then(function(questions) { callback(questions); })
+        .catch(function() {
+            callback(getFallbackQuestions(category, count));
+        });
 }
 
 // Get fallback questions from local bank
 function getFallbackQuestions(category, count) {
     var questions = fallbackQuestions[category] || fallbackQuestions.plumbing;
-    
-    // Shuffle
     var shuffled = [];
     var indices = [];
-    for (var i = 0; i < questions.length; i++) {
-        indices.push(i);
-    }
+    for (var i = 0; i < questions.length; i++) { indices.push(i); }
     for (var j = indices.length - 1; j > 0; j--) {
         var k = Math.floor(Math.random() * (j + 1));
-        var temp = indices[j];
-        indices[j] = indices[k];
-        indices[k] = temp;
+        var temp = indices[j]; indices[j] = indices[k]; indices[k] = temp;
     }
     for (var l = 0; l < Math.min(count, questions.length); l++) {
         shuffled.push(questions[indices[l]]);
@@ -140,12 +122,9 @@ function getFallbackQuestions(category, count) {
     return shuffled;
 }
 
-// Evaluate answer using AI (optional enhancement)
+// Evaluate answer using AI (via proxy)
 function evaluateAnswerWithAI(answer, question, callback) {
-    if (!USE_AI) {
-        callback(null);
-        return;
-    }
+    if (!USE_AI) { callback(null); return; }
     
     var prompt = 'Evaluate this job interview answer. Question: "' + question.question + '". ' +
         'Answer: "' + answer + '". ' +
@@ -153,60 +132,43 @@ function evaluateAnswerWithAI(answer, question, callback) {
         'Return a JSON with: {score: 0-100, feedback: "short feedback", isRelevant: true/false}. ' +
         'Return ONLY the JSON.';
     
-    fetch(DEEPSEEK_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
-        },
-        body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: [
-                { role: 'system', content: 'You are a job interview answer evaluator.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.3,
-            max_tokens: 500
+    // Try all providers in parallel, use the first successful response
+    var fetches = AI_PROVIDERS.map(function(provider) {
+        return fetch(PROXY_URL + '/api/' + provider, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
         })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.choices && data.choices[0]) {
-            try {
-                var content = data.choices[0].message.content;
-                var jsonMatch = content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    callback(JSON.parse(jsonMatch[0]));
-                    return;
-                }
-            } catch (e) {
-                console.error('Parse error:', e);
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            var content = '';
+            if (provider === 'gemini' && data.candidates && data.candidates[0]) {
+                content = data.candidates[0].content.parts[0].text;
+            } else if (data.choices && data.choices[0]) {
+                content = data.choices[0].message.content;
             }
-        }
-        callback(null);
-    })
-    .catch(function(error) {
-        console.error('AI evaluation error:', error);
-        callback(null);
+            if (content) {
+                var jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { return JSON.parse(jsonMatch[0]); }
+            }
+            throw new Error('No valid content');
+        });
     });
+    Promise.any(fetches)
+        .then(function(result) { callback(result); })
+        .catch(function() { callback(null); });
 }
 
-// Get AI-generated question (for dynamic testing)
 function getAIQuestion(category, callback) {
     generateQuestionsWithAI(category, 1, function(questions) {
-        if (questions && questions.length > 0) {
-            callback(questions[0]);
-        } else {
-            callback(getFallbackQuestions(category, 1)[0]);
-        }
+        if (questions && questions.length > 0) { callback(questions[0]); }
+        else { callback(getFallbackQuestions(category, 1)[0]); }
     });
 }
 
-// Export functions
 window.aiModule = {
     generateQuestionsWithAI: generateQuestionsWithAI,
     evaluateAnswerWithAI: evaluateAnswerWithAI,
     getAIQuestion: getAIQuestion,
     getFallbackQuestions: getFallbackQuestions
 };
-

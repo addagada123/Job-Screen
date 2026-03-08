@@ -376,53 +376,59 @@ function completeTest() {
     if (navbar) navbar.style.display = '';
     if (sidebar) sidebar.style.display = '';
     
-    // Evaluate and save results
-    var evaluation = evaluateTest(currentTest.answers, currentTest.questions);
-    var timeTaken = Math.floor((Date.now() - currentTest.startTime) / 1000);
-    
-    var testResult = {
-        id: 'test' + Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        category: currentTest.category,
-        score: evaluation.averageScore,
-        totalQuestions: evaluation.totalQuestions,
-        correctAnswers: evaluation.correctAnswers,
-        timeTaken: timeTaken,
-        answers: currentTest.answers,
-        evaluation: evaluation,
-        aiGenerated: currentTest.useAI
-    };
-    
-    // Update user and admin dashboard
-    var user = getCurrentUser();
-    if (user) {
-        if (!user.tests) user.tests = [];
-        user.tests.push(testResult);
-        
-        var users = getAllUsers();
-        for (var i = 0; i < users.length; i++) {
-            if (users[i].id === user.id) {
-                users[i] = user;
-                break;
-            }
-        }
-        localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        
-        // Update admin dashboard
-        if (typeof updateAdminDashboard === 'function') {
-            updateAdminDashboard();
-        }
-    }
-    
-    // Show test complete UI
+    // Show loading while AI evaluates
     document.getElementById('testContainer').style.display = 'none';
     document.getElementById('testComplete').style.display = 'block';
-    document.getElementById('previewScore').textContent = testResult.score;
+    document.getElementById('previewScore').innerHTML = '<div class="loader"></div><p>AI is evaluating your answers...</p>';
     
-    showToast('Test completed!', 'success');
-    updateDashboard();
+    // Evaluate with AI (async)
+    evaluateTest(currentTest.answers, currentTest.questions, function(evaluation) {
+        var timeTaken = Math.floor((Date.now() - currentTest.startTime) / 1000);
+        
+        var testResult = {
+            id: 'test' + Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            category: currentTest.category,
+            score: evaluation.averageScore,
+            totalQuestions: evaluation.totalQuestions,
+            correctAnswers: evaluation.correctAnswers,
+            timeTaken: timeTaken,
+            answers: currentTest.answers,
+            evaluation: evaluation,
+            aiGenerated: currentTest.useAI
+        };
+        
+        // Update user and admin dashboard
+        var user = getCurrentUser();
+        if (user) {
+            if (!user.tests) user.tests = [];
+            user.tests.push(testResult);
+            
+            var users = getAllUsers();
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].id === user.id) {
+                    users[i] = user;
+                    break;
+                }
+            }
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // Update admin dashboard
+            if (typeof updateAdminDashboard === 'function') {
+                updateAdminDashboard();
+            }
+        }
+        
+        // Show test complete UI
+        document.getElementById('testComplete').style.display = 'block';
+        document.getElementById('previewScore').textContent = testResult.score;
+        
+        showToast('Test completed!', 'success');
+        updateDashboard();
+    });
 }
+
 
 function submitTest(forced) {
     while (currentTest.currentIndex < currentTest.questions.length) {
