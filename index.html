@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobScreen Pro - Blue Collar Job Screening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600&family=Exo+2:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <!-- Google Sign-In -->
+    <meta name="google-signin-client_id" content="692215485641-tvdiiqf8jd8eeuuhgnluakrm9terukfm.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo" onclick="showPage('landing')"><span>⚡</span>JobScreen<span style="color:#00d4ff">Pro</span></a>
+            <div id="navAuth">
+                <button class="btn btn-outline" onclick="showPage('login')">Login</button>
+                <button class="btn btn-primary" onclick="showPage('signup')">Sign Up</button>
+            </div>
+            <div id="navUser" style="display:none">
+                <span id="userName" style="color:#00d4ff;margin-right:10px"></span>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-container">
+        <!-- LANDING -->
+        <section class="page active" id="landingPage">
+            <div class="hero">
+                <div class="hero-content">
+                    <h1>Smart Screening for<br><span class="text-gradient">Blue Collar Jobs</span></h1>
+                    <p>Upload resume, take voice-enabled assessments, get hired faster. AI evaluates your skills.</p>
+                    <button class="btn btn-primary btn-lg" onclick="showPage('signup')">Get Started →</button>
+                    <button class="btn btn-outline btn-lg" onclick="showPage('login')">Login</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LOGIN -->
+        <section class="page" id="loginPage">
+            <div class="auth-container">
+                <div class="auth-card glass">
+                    <h2>Welcome Back</h2>
+                    <form onsubmit="handleLogin(event)">
+                        <input type="email" id="loginEmail" placeholder="Email" required style="width:100%;padding:12px;margin-bottom:10px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff">
+                        <input type="password" id="loginPassword" placeholder="Password" required style="width:100%;padding:12px;margin-bottom:15px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff">
+                        <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+                    </form>
+                    
+
+                    
+                    <!-- Google Sign-In Button - Temporarily disabled due to OAuth setup -->
+                    <!-- <div class="g-signin2" data-onsuccess="onGoogleSignIn" data-onfailure="onGoogleLoginFailure" style="width:100%"></div> -->
+                    <p style="color:#64748b;font-size:14px">Google Sign-In requires OAuth setup. Use email/password to login.</p>
+                    
+                    <p style="margin-top:20px">No account? <a href="#" onclick="showPage('signup')">Sign up</a></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SIGNUP -->
+        <section class="page" id="signupPage">
+            <div class="auth-container">
+                <div class="auth-card glass">
+                    <h2>Create Account</h2>
+                    <form onsubmit="handleSignup(event)">
+                        <input type="text" id="signupName" placeholder="Full Name" required style="width:100%;padding:12px;margin-bottom:10px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff">
+                        <input type="email" id="signupEmail" placeholder="Email" required style="width:100%;padding:12px;margin-bottom:10px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff">
+                        <input type="password" id="signupPassword" placeholder="Password" required style="width:100%;padding:12px;margin-bottom:15px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff">
+                        <div style="margin:15px 0">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                                <input type="checkbox" id="requestAdmin" style="width:20px;height:20px">
+                                <span>Request for Admin Access</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%">Create Account</button>
+                    </form>
+                    
+                    <div class="divider" style="margin:20px 0;text-align:center;color:#64748b">
+                        <span>or</span>
+                    </div>
+                    
+                    <!-- Google Sign-In Button -->
+                    <div class="g-signin2" data-onsuccess="onGoogleSignIn" data-onfailure="onGoogleLoginFailure" style="width:100%"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- USER DASHBOARD -->
+        <section class="page" id="dashboardPage">
+            <div class="dashboard-container">
+                <aside class="dashboard-sidebar">
+                    <div class="profile-avatar" id="dashAvatar">U</div>
+                    <h3 id="dashName">User</h3>
+                    <nav class="sidebar-nav">
+                        <a onclick="showDashSection('overview')">📊 Overview</a>
+                        <a onclick="showDashSection('resume')">📄 Resume</a>
+                        <a onclick="showDashSection('test')">📝 Test</a>
+                        <a onclick="showDashSection('results')">🏆 Results</a>
+                    </nav>
+                </aside>
+                <div class="dashboard-main">
+                    <div class="dash-section active" id="dashOverview">
+                        <h2>Welcome, <span id="welcomeName">User</span>!</h2>
+                        <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+                            <div class="dash-stat-card"><span class="stat-value" id="resumeStatus">Not Uploaded</span><span class="stat-label">Resume</span></div>
+                            <div class="dash-stat-card"><span class="stat-value" id="testStatus">Not Taken</span><span class="stat-label">Test</span></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="showDashSection('resume')">📄 Upload Resume</button>
+                    </div>
+                    <div class="dash-section" id="dashResume">
+                        <h2>Upload Resume</h2>
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="upload-icon">📁</div>
+                            <h3>Drag & Drop or Click</h3>
+                            <p>PDF, DOCX, JPG (Max 5MB)</p>
+                            <input type="file" id="resumeInput" accept=".pdf,.docx,.jpg,.png" hidden>
+                            <button type="button" class="btn btn-primary" id="chooseFileBtn">Choose File</button>
+                        </div>
+                        <div class="resume-info" id="resumeInfo" style="display:none">
+                            <p><strong>File:</strong> <span id="fileName">--</span> <button onclick="removeResume()" style="background:#ef4444;border:none;color:#fff;padding:5px 10px;border-radius:4px;cursor:pointer">×</button></p>
+                            <h4>Extracted Skills</h4>
+                            <div class="skills-list" id="skillsList"></div>
+                            <h4>Detected Category</h4>
+                            <span class="category-badge" id="detectedCategory">--</span>
+                            <div id="resumeActions" style="display:none;margin-top:20px">
+                                <button class="btn btn-primary btn-lg" onclick="showDashSection('test')">📝 Take Test Now</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dash-section" id="dashTest">
+                        <div id="testStart">
+                            <div class="test-instructions">
+                                <h3>Before You Begin</h3>
+                                <ul>
+                                    <li>⚠️ Fullscreen required during test</li>
+                                    <li>⚠️ More than 4 tab switches = auto-submit</li>
+                                    <li>🎤 Answer via voice or text (any language)</li>
+                                </ul>
+                                <button class="btn btn-primary btn-lg" onclick="startTest()">🚀 Start Test</button>
+                            </div>
+                        </div>
+                        <div id="testContainer" style="display:none">
+                            <div class="test-header">
+                                <div>Question <span id="qNum">1</span>/<span id="qTotal">5</span>
+                                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                                </div>
+                                <div class="test-timer" id="timerDisplay">00:00</div>
+                                <div class="tab-counter">Switches: <strong id="switchCount">0</strong>/5</div>
+                            </div>
+                            <button class="btn btn-outline" id="fullscreenBtn" onclick="toggleFullscreen()" style="margin-bottom:15px">🖥️ Enter Fullscreen</button>
+                            <div class="question-box">
+                                <div class="question-text" id="questionText">Loading...</div>
+                                <span class="category-tag" id="questionCategory"></span>
+                            </div>
+                            <div class="answer-section">
+                                <div class="answer-mode">
+                                    <button class="mode-btn active" id="textModeBtn" onclick="setAnswerMode('text')">⌨️ Type</button>
+                                    <button class="mode-btn" id="voiceModeBtn" onclick="setAnswerMode('voice')">🎤 Voice</button>
+                                </div>
+                                <textarea id="answerText" placeholder="Type answer here... (any language)"></textarea>
+                                <div id="voiceInputArea" style="display:none;text-align:center">
+                                    <button class="voice-btn" id="voiceBtn" onmousedown="startVoice()" onmouseup="stopVoice()">
+                                        <span class="voice-icon">🎤</span>
+                                        <span class="voice-text">Hold to Speak</span>
+                                    </button>
+                                    <div class="voice-transcript" id="voiceTranscript">Speech will appear here...</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                            </div>
+                        </div>
+                        <div id="testComplete" style="display:none;text-align:center">
+                            <div class="complete-icon">🎉</div>
+                            <h2>Test Completed!</h2>
+                            <p>Your Score: <span id="previewScore">--</span>%</p>
+                            <button class="btn btn-primary" onclick="showDashSection('results')">View Results</button>
+                        </div>
+                    </div>
+                    <div class="dash-section" id="dashResults">
+                        <h2>Your Results</h2>
+                        <div id="resultsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN -->
+        <section class="page" id="adminPage">
+            <div class="admin-container">
+                <aside class="admin-sidebar">
+                    <h2 style="padding:20px;color:#00d4ff">Admin Panel</h2>
+                    <nav class="admin-nav">
+                        <a onclick="showAdminSection('overview')">📊 Overview</a>
+                        <a onclick="showAdminSection('candidates')">👥 Candidates</a>
+                        <a onclick="showAdminSection('requests')">🔔 Requests</a>
+                    </nav>
+                </aside>
+                <div class="admin-main">
+                    <div class="admin-section active" id="adminOverview">
+                        <h2>Dashboard Overview</h2>
+                        <div class="admin-stats">
+                            <div class="admin-stat-card"><div class="stat-value" id="totalCandidates">0</div><div class="stat-label">Total Candidates</div></div>
+                            <div class="admin-stat-card"><div class="stat-value" id="totalTests">0</div><div class="stat-label">Tests Taken</div></div>
+                            <div class="admin-stat-card"><div class="stat-value" id="avgScoreAdmin">0%</div><div class="stat-label">Average Score</div></div>
+                            <div class="admin-stat-card"><div class="stat-value" id="topCategory">--</div><div class="stat-label">Top Category</div></div>
+                        </div>
+                    </div>
+                    <div class="admin-section" id="adminCandidates">
+                        <h2>Candidates Ranking</h2>
+                        <input type="text" id="candidateSearch" placeholder="Search..." onkeyup="filterCandidates()" style="padding:10px;background:#1e2633;border:1px solid #333;border-radius:8px;color:#fff;margin-bottom:15px">
+                        <table class="candidates-table" id="candidatesTableBody"></table>
+                    </div>
+                    <div class="admin-section" id="adminRequests">
+                        <h2>Admin Access Requests</h2>
+                        <div id="requestsList"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="tabSwitchModal">
+        <div class="modal-content"><h3>⚠️ Warning</h3><p>Tab switches: <span id="warningCount">1</span></p><p>More than 4 will auto-submit!</p><button class="btn btn-primary" onclick="closeTabWarning()">I Understand</button></div>
+    </div>
+    <div class="modal" id="exitTestModal">
+        <div class="modal-content"><h3>🚨 Test Auto-Submitted</h3><p>You exceeded 4 tab switches.</p><button class="btn btn-primary" onclick="forceSubmitTest()">View Results</button></div>
+    </div>
+
+    <script src="data/mock.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/resume.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/proctoring.js"></script>
+    <script src="js/evaluation.js"></script>
+    <script src="js/test.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Google Sign-In Callback -->
+    <script>
+        function onGoogleSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('Google Sign-In:', profile.getName());
+            handleGoogleSignIn(googleUser);
+        }
+        
+        function onGoogleLoginFailure(error) {
+            console.error('Google Sign-In failed:', error);
+            handleGoogleLoginFailure(error);
+        }
+    </script>
+</body>
+</html>
+
