@@ -88,7 +88,15 @@ function handleSignup(e) {
     }
     
     var newUser = { 
-        id: 'u' + Date.now(), name: name, email: email, password: pwd, role: 'user', resume: null, tests: [], pendingAdmin: reqAdmChecked, createdAt: new Date().toISOString()
+        id: 'u' + Date.now(), 
+        name: name, 
+        email: email, 
+        password: pwd, 
+        role: 'user', 
+        resume: null, 
+        tests: [], 
+        pendingAdmin: reqAdmChecked, 
+        createdAt: new Date().toISOString() 
     };
     
     if (reqAdmChecked) {
@@ -106,44 +114,6 @@ function handleSignup(e) {
     localStorage.setItem('users', JSON.stringify(users));
     showToast('Account created! Please login.', 'success');
     setTimeout(function() { showPage('login'); }, 1000);
-}
-
-function handleGoogleSignIn(googleUser) {
-    var profile = googleUser.getBasicProfile();
-    var email = profile.getEmail().toLowerCase();
-    var name = profile.getName();
-    var id = profile.getId();
-    
-    var users = getAllUsers();
-    var user = null;
-    for (var i = 0; i < users.length; i++) {
-        if (users[i].email.toLowerCase() === email) {
-            user = users[i];
-            break;
-        }
-    }
-    
-    if (!user) {
-        user = { id: 'google_' + id, name: name, email: email, password: '', role: 'user', resume: null, tests: [], googleId: id, pendingAdmin: false, createdAt: new Date().toISOString() };
-        users.push(user);
-        localStorage.setItem('users', JSON.stringify(users));
-    }
-    
-    if (user.pendingAdmin === true) {
-        showToast('Your admin request is pending. Wait for approval.', 'warning');
-        return;
-    }
-    
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    showPage('dashboard');
-    updateDashboard();
-    updateAuthUI();
-    showToast('Welcome ' + name + '!', 'success');
-}
-
-function handleGoogleLoginFailure(error) {
-    console.error('Google login failed:', error);
-    showToast('Google login failed. Try again.', 'error');
 }
 
 function logout() {
@@ -173,10 +143,12 @@ function updateAuthUI() {
     var userName = document.getElementById('userName');
     
     if (user) {
+        // Hide login/signup buttons, show user info and logout
         if (navAuth) navAuth.style.display = 'none';
         if (navUser) navUser.style.display = 'flex';
         if (userName) userName.textContent = user.name || user.email.split('@')[0];
     } else {
+        // Show login/signup buttons, hide user info
         if (navAuth) navAuth.style.display = 'flex';
         if (navUser) navUser.style.display = 'none';
     }
@@ -187,3 +159,4 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
     updateAuthUI();
 });
+

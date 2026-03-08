@@ -1,14 +1,34 @@
-// AI Module for Dynamic Question Generation
-// Using fallback questions (AI generation disabled for security)
+// Mock Data for Job Screen App
 
-// Note: To enable AI generation, add your DeepSeek API key below
-// var DEEPSEEK_API_KEY = 'your-api-key-here';
-// var DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const jobCategories = {
+    plumbing: { 
+        name: 'Plumbing', 
+        keywords: ['pipe', 'water', 'drain', 'leak', 'bathroom', 'kitchen', 'fitting', 'valve', 'welding', 'installation', 'repair', 'plumber', 'p-trap', 'vent', 'sewer', 'fixture'] 
+    },
+    masonry: { 
+        name: 'Masonry', 
+        keywords: ['brick', 'cement', 'concrete', 'tiles', 'stone', 'wall', 'floor', 'construction', 'mortar', 'plaster', 'block', 'grout', 'trowel', 'foundation'] 
+    },
+    driving: { 
+        name: 'Driving', 
+        keywords: ['license', 'vehicle', 'car', 'truck', 'delivery', 'transport', 'route', 'navigation', 'safety', 'traffic', 'cdl', 'defensive', 'parking'] 
+    },
+    electrical: { 
+        name: 'Electrical', 
+        keywords: ['wiring', 'circuit', 'panel', 'switch', 'outlet', 'voltage', 'power', 'lighting', 'installation', 'repair', 'breaker', 'ground', 'wire'] 
+    },
+    carpentry: { 
+        name: 'Carpentry', 
+        keywords: ['wood', 'furniture', 'cabinet', 'door', 'window', 'frame', 'carpenter', 'joinery', 'cutting', 'sanding', 'saw', 'drill', 'hammer'] 
+    },
+    painting: { 
+        name: 'Painting', 
+        keywords: ['paint', 'color', 'wall', 'interior', 'exterior', 'brush', 'roller', 'spray', 'texture', 'finish', 'primer', 'coat', 'stain'] 
+    }
+};
 
-var USE_AI = false; // Set to true with valid API key to enable AI generation
-
-// Fallback question bank (used by default)
-var fallbackQuestions = {
+// Fallback question bank - used when AI is not available
+const questionBank = {
     plumbing: [
         { id: 'plum1', question: 'What is the standard slope for drain pipes?', keywords: ['1/4', '1/8', 'quarter', 'inch', 'foot', 'slope', 'gradient', 'fall'], difficulty: 'basic' },
         { id: 'plum2', question: 'How do you fix a leaky pipe under the sink?', keywords: ['wrench', 'plumber tape', 'seal', 'replace', 'tighten', 'nut', 'ferrule', 'washer'], difficulty: 'intermediate' },
@@ -53,160 +73,131 @@ var fallbackQuestions = {
     ]
 };
 
-// Generate questions using AI (if enabled)
-function generateQuestionsWithAI(category, count, callback) {
-    // If AI is disabled, use fallback
-    if (!USE_AI) {
-        callback(getFallbackQuestions(category, count));
-        return;
-    }
-    
-    var categoryNames = {
-        plumbing: 'Plumbing',
-        masonry: 'Masonry',
-        driving: 'Driving',
-        electrical: 'Electrical',
-        carpentry: 'Carpentry',
-        painting: 'Painting'
-    };
-    
-    var categoryName = categoryNames[category] || 'General';
-    
-    var prompt = 'Generate ' + count + ' job interview questions for a ' + categoryName + ' position suitable for a blue collar worker. ' +
-        'For each question, provide: the question text and 4-5 keywords that would indicate a correct answer. ' +
-        'Return as JSON array with format: [{id, question, keywords:[], difficulty}] ' +
-        'Make questions practical and related to real job scenarios. ' +
-        'Return ONLY the JSON array, no other text.';
-    
-    fetch(DEEPSEEK_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
-        },
-        body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: [
-                { role: 'system', content: 'You are a job interview question generator.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
-        })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-            try {
-                var content = data.choices[0].message.content;
-                var jsonMatch = content.match(/\[[\s\S]*\]/);
-                if (jsonMatch) {
-                    var questions = JSON.parse(jsonMatch[0]);
-                    callback(questions);
-                    return;
-                }
-            } catch (e) {
-                console.error('Parse error:', e);
-            }
-        }
-        // Fallback to local questions
-        callback(getFallbackQuestions(category, count));
-    })
-    .catch(function(error) {
-        console.error('AI generation error:', error);
-        callback(getFallbackQuestions(category, count));
-    });
-}
+// Skill keywords for resume parsing
+const skillKeywords = [
+    // Plumbing
+    'pipe fitting', 'drain cleaning', 'water heater', 'gas fitting', 'fixture installation', 'leak detection', 'p-trap', 'venting', 'soldering',
+    // Masonry
+    'brick laying', 'concrete work', 'tile installation', 'stone work', 'plastering', 'pointing', 'block work', 'stucco',
+    // Driving
+    'cdl', 'defensive driving', 'route planning', 'vehicle maintenance', 'load securement', 'dot compliance', 'forklift', 'heavy equipment',
+    // Electrical
+    'wiring', 'panel installation', 'circuit breaker', 'outlet installation', 'lighting', 'electrical repair', 'conduit', 'transformer',
+    // Carpentry
+    'furniture making', 'cabinet installation', 'door installation', 'window installation', 'framing', 'wood finishing', 'deck building',
+    // Painting
+    'interior painting', 'exterior painting', 'texture', 'faux finish', 'spray painting', 'color matching', 'drywall', 'spackle'
+];
 
-// Get fallback questions from local bank
-function getFallbackQuestions(category, count) {
-    var questions = fallbackQuestions[category] || fallbackQuestions.plumbing;
-    
-    // Shuffle
-    var shuffled = [];
-    var indices = [];
-    for (var i = 0; i < questions.length; i++) {
-        indices.push(i);
+// Sample users for demo
+const sampleUsers = [
+    { 
+        id: 'user1', 
+        name: 'Rajesh Kumar', 
+        email: 'rajesh@example.com', 
+        password: 'password123', 
+        role: 'user', 
+        resume: { 
+            fileName: 'rajesh_plumber.pdf', 
+            skills: ['pipe fitting', 'drain cleaning', 'water heater'], 
+            jobCategory: 'plumbing' 
+        }, 
+        tests: [{ 
+            id: 'test1', 
+            date: '2024-01-15', 
+            category: 'plumbing', 
+            score: 85, 
+            totalQuestions: 5,
+            answers: []
+        }] 
+    },
+    { 
+        id: 'user2', 
+        name: 'Amit Sharma', 
+        email: 'amit@example.com', 
+        password: 'password123', 
+        role: 'user', 
+        resume: { 
+            fileName: 'amit_electrician.pdf', 
+            skills: ['wiring', 'panel installation', 'circuit breaker'], 
+            jobCategory: 'electrical' 
+        }, 
+        tests: [{ 
+            id: 'test2', 
+            date: '2024-01-14', 
+            category: 'electrical', 
+            score: 72, 
+            totalQuestions: 5,
+            answers: []
+        }] 
+    },
+    { 
+        id: 'user3', 
+        name: 'Suresh Patel', 
+        email: 'suresh@example.com', 
+        password: 'password123', 
+        role: 'user', 
+        resume: { 
+            fileName: 'suresh_driver.pdf', 
+            skills: ['cdl', 'defensive driving', 'route planning'], 
+            jobCategory: 'driving' 
+        }, 
+        tests: [{ 
+            id: 'test3', 
+            date: '2024-01-13', 
+            category: 'driving', 
+            score: 90, 
+            totalQuestions: 5,
+            answers: []
+        }] 
+    },
+    { 
+        id: 'user4', 
+        name: 'Mohammad Khan', 
+        email: 'khan@example.com', 
+        password: 'password123', 
+        role: 'user', 
+        resume: { 
+            fileName: 'khan_carpenter.pdf', 
+            skills: ['furniture making', 'cabinet installation'], 
+            jobCategory: 'carpentry' 
+        }, 
+        tests: [{ 
+            id: 'test4', 
+            date: '2024-01-12', 
+            category: 'carpentry', 
+            score: 65, 
+            totalQuestions: 5,
+            answers: []
+        }] 
+    },
+    { 
+        id: 'user5', 
+        name: 'Vikram Singh', 
+        email: 'vikram@example.com', 
+        password: 'password123', 
+        role: 'user', 
+        resume: { 
+            fileName: 'vikram_mason.pdf', 
+            skills: ['brick laying', 'concrete work', 'tile installation'], 
+            jobCategory: 'masonry' 
+        }, 
+        tests: [{ 
+            id: 'test5', 
+            date: '2024-01-11', 
+            category: 'masonry', 
+            score: 78, 
+            totalQuestions: 5,
+            answers: []
+        }] 
     }
-    for (var j = indices.length - 1; j > 0; j--) {
-        var k = Math.floor(Math.random() * (j + 1));
-        var temp = indices[j];
-        indices[j] = indices[k];
-        indices[k] = temp;
-    }
-    for (var l = 0; l < Math.min(count, questions.length); l++) {
-        shuffled.push(questions[indices[l]]);
-    }
-    return shuffled;
-}
+];
 
-// Evaluate answer using AI (optional enhancement)
-function evaluateAnswerWithAI(answer, question, callback) {
-    if (!USE_AI) {
-        callback(null);
-        return;
-    }
-    
-    var prompt = 'Evaluate this job interview answer. Question: "' + question.question + '". ' +
-        'Answer: "' + answer + '". ' +
-        'Keywords to look for: ' + question.keywords.join(', ') + '. ' +
-        'Return a JSON with: {score: 0-100, feedback: "short feedback", isRelevant: true/false}. ' +
-        'Return ONLY the JSON.';
-    
-    fetch(DEEPSEEK_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
-        },
-        body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: [
-                { role: 'system', content: 'You are a job interview answer evaluator.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.3,
-            max_tokens: 500
-        })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.choices && data.choices[0]) {
-            try {
-                var content = data.choices[0].message.content;
-                var jsonMatch = content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    callback(JSON.parse(jsonMatch[0]));
-                    return;
-                }
-            } catch (e) {
-                console.error('Parse error:', e);
-            }
-        }
-        callback(null);
-    })
-    .catch(function(error) {
-        console.error('AI evaluation error:', error);
-        callback(null);
-    });
-}
-
-// Get AI-generated question (for dynamic testing)
-function getAIQuestion(category, callback) {
-    generateQuestionsWithAI(category, 1, function(questions) {
-        if (questions && questions.length > 0) {
-            callback(questions[0]);
-        } else {
-            callback(getFallbackQuestions(category, 1)[0]);
-        }
-    });
-}
-
-// Export functions
-window.aiModule = {
-    generateQuestionsWithAI: generateQuestionsWithAI,
-    evaluateAnswerWithAI: evaluateAnswerWithAI,
-    getAIQuestion: getAIQuestion,
-    getFallbackQuestions: getFallbackQuestions
+// Export to window
+window.mockData = { 
+    jobCategories, 
+    questionBank, 
+    skillKeywords, 
+    sampleUsers 
 };
 

@@ -19,7 +19,6 @@ async function requestPermissions() {
     var videoGranted = false;
     
     try {
-        // Request microphone
         var micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micGranted = true;
         micStream.getTracks().forEach(track => track.stop());
@@ -29,7 +28,6 @@ async function requestPermissions() {
     }
     
     try {
-        // Request video
         var videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoGranted = true;
         videoStream.getTracks().forEach(track => track.stop());
@@ -44,7 +42,6 @@ async function requestPermissions() {
 function showPermissionModal() {
     var modal = document.getElementById('permissionModal');
     if (!modal) {
-        // Create modal if doesn't exist
         var modalHtml = `
             <div class="modal" id="permissionModal">
                 <div class="modal-content" style="max-width:450px;text-align:center">
@@ -105,7 +102,6 @@ function startTestWithoutPermissions() {
 }
 
 function startTest() {
-    // Show permission modal first
     showPermissionModal();
 }
 
@@ -152,15 +148,26 @@ function initTest(questions, category) {
         currentIndex: 0,
         startTime: Date.now(),
         timerInterval: null,
-        category: category
+        category: category,
+        useAI: true,
+        micPermission: currentTest.micPermission,
+        videoPermission: currentTest.videoPermission
     };
     
+    // Hide test start, show test container
     document.getElementById('testStart').style.display = 'none';
     document.getElementById('testContainer').style.display = 'block';
     document.getElementById('testComplete').style.display = 'none';
     
     document.getElementById('qTotal').textContent = questions.length;
     
+    // HIDE NAVBAR AND SIDEBAR DURING TEST
+    var navbar = document.getElementById('mainNavbar');
+    var sidebar = document.getElementById('dashSidebar');
+    if (navbar) navbar.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+    
+    // Start proctoring and timer
     startProctoring();
     startTimer();
     showQuestion(0);
@@ -220,8 +227,21 @@ function showQuestion(index) {
     }
     
     setAnswerMode('text');
+    
+    // Show/hide Next and Submit buttons based on question position
+    var nextBtn = document.getElementById('nextQuestionBtn');
+    var submitBtn = document.getElementById('submitTestBtn');
+    
+    if (nextBtn && submitBtn) {
+        if (index < currentTest.questions.length - 1) {
+            nextBtn.style.display = 'inline-flex';
+            submitBtn.style.display = 'none';
+        } else {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-flex';
+        }
+    }
 }
-
 
 function setAnswerMode(mode) {
     var textInputArea = document.getElementById('textInputArea');
@@ -230,19 +250,19 @@ function setAnswerMode(mode) {
     var voiceModeBtn = document.getElementById('voiceModeBtn');
     
     if (mode === 'text') {
-        textInputArea.style.display = 'block';
-        voiceInputArea.style.display = 'none';
-        textModeBtn.classList.add('active');
-        voiceModeBtn.classList.remove('active');
+        if (textInputArea) textInputArea.style.display = 'block';
+        if (voiceInputArea) voiceInputArea.style.display = 'none';
+        if (textModeBtn) textModeBtn.classList.add('active');
+        if (voiceModeBtn) voiceModeBtn.classList.remove('active');
     } else {
-        textInputArea.style.display = 'none';
-        voiceInputArea.style.display = 'block';
-        textModeBtn.classList.remove('active');
-        voiceModeBtn.classList.add('active');
+        if (textInputArea) textInputArea.style.display = 'none';
+        if (voiceInputArea) voiceInputArea.style.display = 'block';
+        if (textModeBtn) textModeBtn.classList.remove('active');
+        if (voiceModeBtn) voiceModeBtn.classList.add('active');
     }
 }
 
-// Save current answer (without moving to next question)
+// Save current answer
 function saveCurrentAnswer() {
     var answerText = '';
     var textInputArea = document.getElementById('textInputArea');
@@ -291,34 +311,24 @@ function submitAnswer() {
         return;
     }
     
-    currentTest.currentIndex++;
-    
-    if (currentTest.currentIndex >= currentTest.questions.length) {
-        completeTest();
+    // Only auto-advance if not last question
+    if (currentTest.currentIndex < currentTest.questions.length - 1) {
+        nextQuestion();
     } else {
-        showQuestion(currentTest.currentIndex);
+        // Show submit button for last question
+        var submitBtn = document.getElementById('submitTestBtn');
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+        showToast('Answer saved! Click Submit Test to finish.', 'info');
     }
 }
 
-// Go to previous question
-function previousQuestion() {
-    if (currentTest.currentIndex > 0) {
-        saveCurrentAnswer();
-        currentTest.currentIndex--;
-        showQuestion(currentTest.currentIndex);
-    }
-}
-
-// Go to next question  
 function nextQuestion() {
     if (currentTest.currentIndex < currentTest.questions.length - 1) {
-        saveCurrentAnswer();
         currentTest.currentIndex++;
         showQuestion(currentTest.currentIndex);
     }
 }
 
-// Submit the entire test
 function submitTestNow() {
     saveCurrentAnswer();
     
@@ -349,24 +359,6 @@ function submitTestNow() {
     }
 }
 
-function skipQuestion() {
-    var question = currentTest.questions[currentTest.currentIndex];
-    currentTest.answers.push({
-        questionId: question.id || 'q' + currentTest.currentIndex,
-        text: '',
-        skipped: true,
-        timestamp: Date.now()
-    });
-    
-    currentTest.currentIndex++;
-    
-    if (currentTest.currentIndex >= currentTest.questions.length) {
-        completeTest();
-    } else {
-        showQuestion(currentTest.currentIndex);
-    }
-}
-
 function completeTest() {
     if (currentTest.timerInterval) {
         clearInterval(currentTest.timerInterval);
@@ -378,6 +370,13 @@ function completeTest() {
         document.exitFullscreen();
     }
     
+    // RESTORE NAVBAR AND SIDEBAR AFTER TEST
+    var navbar = document.getElementById('mainNavbar');
+    var sidebar = document.getElementById('dashSidebar');
+    if (navbar) navbar.style.display = '';
+    if (sidebar) sidebar.style.display = '';
+    
+    // Evaluate and save results
     var evaluation = evaluateTest(currentTest.answers, currentTest.questions);
     var timeTaken = Math.floor((Date.now() - currentTest.startTime) / 1000);
     
@@ -387,13 +386,14 @@ function completeTest() {
         category: currentTest.category,
         score: evaluation.averageScore,
         totalQuestions: evaluation.totalQuestions,
-        correctAnswers: Math.round((evaluation.averageScore / 100) * evaluation.totalQuestions),
+        correctAnswers: evaluation.correctAnswers,
         timeTaken: timeTaken,
         answers: currentTest.answers,
         evaluation: evaluation,
         aiGenerated: currentTest.useAI
     };
     
+    // Update user and admin dashboard
     var user = getCurrentUser();
     if (user) {
         if (!user.tests) user.tests = [];
@@ -408,11 +408,17 @@ function completeTest() {
         }
         localStorage.setItem('users', JSON.stringify(users));
         localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        // Update admin dashboard
+        if (typeof updateAdminDashboard === 'function') {
+            updateAdminDashboard();
+        }
     }
     
+    // Show test complete UI
     document.getElementById('testContainer').style.display = 'none';
     document.getElementById('testComplete').style.display = 'block';
-    document.getElementById('previewScore').textContent = evaluation.averageScore + '%';
+    document.getElementById('previewScore').textContent = testResult.score;
     
     showToast('Test completed!', 'success');
     updateDashboard();
@@ -420,7 +426,15 @@ function completeTest() {
 
 function submitTest(forced) {
     while (currentTest.currentIndex < currentTest.questions.length) {
-        skipQuestion();
+        var question = currentTest.questions[currentTest.currentIndex];
+        currentTest.answers.push({
+            questionIndex: currentTest.currentIndex,
+            questionId: question.id || 'q' + currentTest.currentIndex,
+            text: '',
+            skipped: true,
+            timestamp: Date.now()
+        });
+        currentTest.currentIndex++;
     }
     completeTest();
     if (forced) {
@@ -446,6 +460,12 @@ function resetTestUI() {
     document.getElementById('testContainer').style.display = 'none';
     document.getElementById('testComplete').style.display = 'none';
     document.getElementById('answerText').value = '';
+    
+    // Restore navbar and sidebar
+    var navbar = document.getElementById('mainNavbar');
+    var sidebar = document.getElementById('dashSidebar');
+    if (navbar) navbar.style.display = '';
+    if (sidebar) sidebar.style.display = '';
     
     // Reset test start content
     document.getElementById('testStart').innerHTML = '<div class="test-instructions"><h3>Before You Begin</h3><ul><li>⚠️ Fullscreen required during test</li><li>⚠️ More than 4 tab switches = auto-submit</li><li>🎤 Answer via voice or text (any language)</li></ul><button class="btn btn-primary btn-lg" onclick="startTest()">🚀 Start Test</button></div>';
