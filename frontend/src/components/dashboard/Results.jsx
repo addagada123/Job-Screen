@@ -13,7 +13,7 @@ export default function Results() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return;
-    fetch(`http://localhost:3000/api/user-status?email=${encodeURIComponent(user.email)}`)
+    fetch(`${import.meta.env.VITE_API_BASE}/api/user-status?email=${encodeURIComponent(user.email)}`)
       .then(res => res.json())
       .then(data => {
         if (data.selection === "selected") setResultMsg("Congratulations! you are selected for the next round.");

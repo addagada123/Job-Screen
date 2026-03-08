@@ -9,7 +9,7 @@ export default function GoogleAuthButton({ mode = 'login' }) {
   const handleSuccess = async (credentialResponse) => {
     // Send credentialResponse.credential (JWT) to backend for verification and user creation/login
     try {
-      const res = await fetch(`http://localhost:3000/api/google-auth`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/google-auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: credentialResponse.credential, mode })

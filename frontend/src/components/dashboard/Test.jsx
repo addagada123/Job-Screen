@@ -64,7 +64,7 @@ export default function Test() {
       // Mark test as taken after first submit and update score in DB
       const user = JSON.parse(localStorage.getItem("user"));
       if (user && !user.testTaken) {
-        await fetch("http://localhost:3000/api/mark-test-taken", {
+        await fetch(`${import.meta.env.VITE_API_BASE}/api/mark-test-taken`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email })

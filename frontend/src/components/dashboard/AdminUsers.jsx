@@ -9,7 +9,7 @@ export default function AdminUsers() {
 
   const fetchUsers = () => {
     setLoading(true);
-    fetch("http://localhost:3000/api/admin/users?admin=1")
+    fetch(`${import.meta.env.VITE_API_BASE}/api/admin/users?admin=1`)
       .then(res => res.json())
       .then(data => {
         setUsers(data);
@@ -27,7 +27,7 @@ export default function AdminUsers() {
 
   const handleSelect = async (email, selection) => {
     setSelecting(email + selection);
-    await fetch("http://localhost:3000/api/admin/select", {
+    await fetch(`${import.meta.env.VITE_API_BASE}/api/admin/select`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, selection })

@@ -8,7 +8,7 @@ export default function AdminRequests() {
 
   const fetchRequests = () => {
     setLoading(true);
-    fetch("http://localhost:3000/api/admin/requests")
+    fetch(`${import.meta.env.VITE_API_BASE}/api/admin/requests`)
       .then(res => res.json())
       .then(data => {
         setRequests(data);
@@ -25,7 +25,7 @@ export default function AdminRequests() {
   }, []);
 
   const handleApprove = (email, approve) => {
-    fetch("http://localhost:3000/api/admin/approve", {
+    fetch(`${import.meta.env.VITE_API_BASE}/api/admin/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, approve })
