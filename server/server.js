@@ -70,5 +70,16 @@ app.post('/api/openai', async (req, res) => {
     }
 });
 
+
+const path = require('path');
+
+// Serve static files from the project root (one level up from /server)
+app.use(express.static(path.join(__dirname, '..')));
+
+// Serve index.html at root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API Proxy running on port ${PORT}`));
