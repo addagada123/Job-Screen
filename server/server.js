@@ -1,85 +1,103 @@
-const express = require('express');
-const cors = require('cors');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-require('dotenv').config();
+(function () {
+	const express = require('express');
+	const cors = require('cors');
+	const dotenv = require('dotenv');
+	const { OAuth2Client } = require('google-auth-library');
+	const { MongoClient, ObjectId } = require('mongodb');
+	dotenv.config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+	const app = express();
+	app.use(cors());
+	app.use(express.json());
 
-// DeepSeek API endpoint
-app.post('/api/deepseek', async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 500
-            })
-        });
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+	// Google OAuth2 client
+	const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Gemini API endpoint
-app.post('/api/gemini', async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        const apiKey = process.env.GEMINI_API_KEY;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+	// MongoDB setup
+	const mongoUri = process.env.MONGODB_URI;
+	const mongoClient = new MongoClient(mongoUri);
+	let usersCollection;
 
-// OpenAI API endpoint
-app.post('/api/openai', async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 500
-            })
-        });
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+	async function connectDb() {
+		await mongoClient.connect();
+		const db = mongoClient.db();
+		usersCollection = db.collection('users');
+		console.log('Connected to MongoDB');
+	}
+	connectDb().catch(console.error);
 
+	// Google Sign-In endpoint
+	app.post('/api/google-auth', async (req, res) => {
+		const { credential } = req.body;
+		if (!credential) {
+			return res.status(400).json({ error: 'Missing Google credential' });
+		}
+		try {
+			// Verify Google ID token
+			const ticket = await client.verifyIdToken({
+				idToken: credential,
+				audience: process.env.GOOGLE_CLIENT_ID,
+			});
+			const payload = ticket.getPayload();
+			const { sub, email, name, picture } = payload;
+			const firstName = name.split(' ')[0];
 
-const path = require('path');
+			// Check if user exists, else create
+			let user = await usersCollection.findOne({ email });
+			if (!user) {
+				user = {
+					googleId: sub,
+					email,
+					name,
+					firstName,
+					picture,
+					role: 'candidate',
+					score: null,
+				};
+				await usersCollection.insertOne(user);
+			}
 
-// Serve static files from the project root (one level up from /server)
-app.use(express.static(path.join(__dirname, '..')));
+			// Return user info (simulate session)
+			res.json({
+				success: true,
+				user: {
+					id: user._id,
+					email: user.email,
+					name: user.name,
+					firstName: user.firstName,
+					picture: user.picture,
+					role: user.role,
+					score: user.score,
+				},
+			});
+		} catch (err) {
+			res.status(401).json({ error: 'Invalid Google credential', details: err.message });
+		}
+	});
 
-// Serve index.html at root
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
-});
+	// Endpoint to update user score
+	app.post('/api/update-score', async (req, res) => {
+		const { email, score } = req.body;
+		if (!email || typeof score !== 'number') {
+			return res.status(400).json({ error: 'Missing email or score' });
+		}
+		try {
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { score } }
+			);
+			if (result.matchedCount === 0) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to update score', details: err.message });
+		}
+	});
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API Proxy running on port ${PORT}`));
+	// Start server
+	const PORT = process.env.PORT || 5000;
+	app.listen(PORT, () => {
+		console.log(`Server running on port ${PORT}`);
+	});
+})();
