@@ -9,6 +9,8 @@ import { FaMicrophone, FaStop } from "react-icons/fa";
 
 
 
+import { useNavigate } from "react-router-dom";
+
 export default function Test() {
   const [answer, setAnswer] = useState("");
   const [voiceAnswer, setVoiceAnswer] = useState("");
@@ -33,6 +35,15 @@ export default function Test() {
   const [adminNotification, setAdminNotification] = useState("");
   const toast = useToast();
   const tabSwitches = useRef(0);
+  const navigate = useNavigate();
+  // Block access if resume is not uploaded
+  useEffect(() => {
+    const resumeUploaded = localStorage.getItem("resumeUploaded");
+    if (!resumeUploaded) {
+      toast({ title: "Please upload your resume first.", status: "warning", duration: 3000 });
+      navigate("/dashboard/resume");
+    }
+  }, [navigate, toast]);
 
   // Simulate fetching admin notification (replace with real API call as needed)
   useEffect(() => {
