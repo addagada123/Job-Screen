@@ -25,7 +25,7 @@ export default function Login() {
   };
 
   return (
-    <Box minH="80vh" display="flex" alignItems="center" justifyContent="center" position="relative">
+    <Box minH="80vh" display="flex" alignItems="center" justifyContent="center" position="relative" mt={20}>
       {/* Background Effects */}
       <Box
         position="absolute"

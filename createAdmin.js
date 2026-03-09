@@ -11,11 +11,11 @@ const uri = process.env.MONGODB_URI || 'mongodb+srv://Bhanuteja:Addagada%40123@c
     const db = client.db('jobscreen');
     const users = db.collection('users');
     await users.updateOne(
-      { email: 'admin@123' },
+      { email: 'email-admin@gmail.com' },
       {
         $set: {
           name: 'Admin',
-          email: 'admin@123',
+          email: 'email-admin@gmail.com',
           password: 'pass-admin',
           role: 'admin',
           isAdmin: true,
