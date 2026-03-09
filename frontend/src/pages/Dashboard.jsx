@@ -1,4 +1,4 @@
-import { Box, Flex, Text, VStack } from "@chakra-ui/react";
+import { Box, Flex, Text, VStack, Button, useToast, Alert, AlertIcon } from "@chakra-ui/react";
 import Sidebar from "../components/dashboard/Sidebar";
 import Test from "../components/dashboard/Test";
 import Results from "../components/dashboard/Results";
@@ -8,6 +8,39 @@ import AdminRequests from "../components/dashboard/AdminRequests";
 import AdminUsers from "../components/dashboard/AdminUsers";
 import { Outlet, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
+  return (
+    <Box mt={20} maxW="600px" mx="auto" p={6} borderRadius="2xl" bg="rgba(255,255,255,0.02)" border="1px solid rgba(255,255,255,0.05)">
+      <VStack spacing={6} align="stretch">
+        <Text fontSize="2xl" fontWeight="700" color="white">Welcome, {user?.name || user?.email || "User"}!</Text>
+        <Box>
+          <Text color="gray.300" mb={2}>Resume:</Text>
+          {resumeUploaded ? (
+            <Alert status="success" borderRadius="md" mb={2}><AlertIcon />Resume uploaded</Alert>
+          ) : (
+            <Button colorScheme="purple" onClick={onUploadResume}>Upload Resume</Button>
+          )}
+        </Box>
+        <Box>
+          <Text color="gray.300" mb={2}>Test Status:</Text>
+          {testTaken ? (
+            <Alert status="info" borderRadius="md" mb={2}><AlertIcon />Test already taken</Alert>
+          ) : (
+            <Button colorScheme="green" onClick={onTakeTest} isDisabled={!resumeUploaded}>Take Test</Button>
+          )}
+        </Box>
+        <Box>
+          <Text color="gray.300" mb={2}>Results:</Text>
+          {testTaken ? (
+            <Button colorScheme="blue" onClick={onViewResults}>View Results</Button>
+          ) : (
+            <Text color="gray.500">Results available after test</Text>
+          )}
+        </Box>
+      </VStack>
+    </Box>
+  );
+}
 import { getCurrentUser } from "../utils/auth";
 import { motion } from "framer-motion";
 
@@ -48,6 +81,12 @@ function Overview() {
 
 export default function Dashboard({ hideSidebar }) {
   const [user, setUser] = useState(null);
+  const [resumeUploaded, setResumeUploaded] = useState(!!localStorage.getItem("resumeUploaded"));
+  const [testTaken, setTestTaken] = useState(() => {
+    const u = JSON.parse(localStorage.getItem("user"));
+    return u && u.testTaken;
+  });
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -60,6 +99,8 @@ export default function Dashboard({ hideSidebar }) {
     if (!u) {
       navigate("/login");
     }
+    setResumeUploaded(!!localStorage.getItem("resumeUploaded"));
+    setTestTaken(u && u.testTaken);
   }, [navigate]);
 
   if (!user) {
@@ -130,8 +171,36 @@ export default function Dashboard({ hideSidebar }) {
         minH="100vh"
         position="relative"
         zIndex={1}
+        mt={!hideSidebar && !isTestRoute ? 20 : 0}
       >
         <Routes>
+          <Route path="" element={
+            <DashboardHome
+              user={user}
+              resumeUploaded={resumeUploaded}
+              testTaken={testTaken}
+              onUploadResume={() => navigate("/dashboard/resume")}
+              onTakeTest={async () => {
+                if (!resumeUploaded) {
+                  toast({ title: "Please upload your resume first.", status: "warning" });
+                  return;
+                }
+                if (testTaken) {
+                  toast({ title: "You have already taken the test.", status: "info" });
+                  return;
+                }
+                if (!window.confirm("Do you want to take the test now? You can only take it once.")) return;
+                // Ask for mic permission
+                try {
+                  await navigator.mediaDevices.getUserMedia({ audio: true });
+                  navigate("/dashboard/test");
+                } catch {
+                  toast({ title: "Microphone permission denied.", status: "error" });
+                }
+              }}
+              onViewResults={() => navigate("/dashboard/results")}
+            />
+          } />
           <Route path="overview" element={<Overview />} />
           <Route path="resume" element={<Resume />} />
           <Route path="test" element={<Test />} />
