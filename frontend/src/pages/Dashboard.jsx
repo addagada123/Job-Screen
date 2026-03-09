@@ -51,6 +51,9 @@ export default function Dashboard({ hideSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Hide sidebar/navbar if on /test route
+  const isTestRoute = location.pathname.includes("/test");
+
   useEffect(() => {
     const u = getCurrentUser();
     setUser(u);
@@ -119,10 +122,10 @@ export default function Dashboard({ hideSidebar }) {
         />
       </Box>
 
-      {!hideSidebar && <Sidebar user={user} />}
-      
+      {!hideSidebar && !isTestRoute && <Sidebar user={user} />}
+
       <Box
-        ml={!hideSidebar ? { base: 0, md: 72 } : 0}
+        ml={!hideSidebar && !isTestRoute ? { base: 0, md: 72 } : 0}
         flex="1"
         minH="100vh"
         position="relative"

@@ -1,19 +1,24 @@
 
 
-import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+
+import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon } from "@chakra-ui/react";
+import { useState, useEffect, useRef } from "react";
 import { evaluateAnswer, updateUserScore } from "../../api";
 import { generateQuestion } from "../../api.question";
+import { FaMicrophone, FaStop } from "react-icons/fa";
 
 
 
 export default function Test() {
   const [answer, setAnswer] = useState("");
+  const [voiceAnswer, setVoiceAnswer] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef(null);
   const [question, setQuestion] = useState({
     text: "",
     category: "",
     number: 1,
-    total: 5,
+    total: 15,
     time: 20,
     switches: 0,
     maxSwitches: 5
@@ -23,7 +28,59 @@ export default function Test() {
   const [evalResult, setEvalResult] = useState(null);
   const [qLoading, setQLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
+  const [forceExit, setForceExit] = useState(false);
+  const [adminNotification, setAdminNotification] = useState("");
   const toast = useToast();
+  const tabSwitches = useRef(0);
+
+  // Simulate fetching admin notification (replace with real API call as needed)
+  useEffect(() => {
+    // Example: fetch admin notification for the user
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.adminMessage) {
+      setAdminNotification(user.adminMessage);
+    }
+    // You can replace this with a real fetch to backend for admin messages/selection
+  }, []);
+
+  // Fullscreen and tab switch enforcement
+  useEffect(() => {
+    // Request fullscreen on mount
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+
+    // Tab switch handler
+    const handleVisibility = () => {
+      if (document.hidden) {
+        tabSwitches.current += 1;
+        setQuestion(q => ({ ...q, switches: tabSwitches.current }));
+        if (tabSwitches.current >= 4) {
+          setForceExit(true);
+          toast({ title: "Test exited: Too many tab switches.", status: "error", duration: 4000 });
+        } else {
+          toast({ title: `Tab switch detected (${tabSwitches.current}/4)`, status: "warning", duration: 2000 });
+        }
+      }
+    };
+    // Fullscreen exit handler
+    const handleFullscreen = () => {
+      if (!document.fullscreenElement) {
+        setForceExit(true);
+        toast({ title: "Test exited: Fullscreen exited.", status: "error", duration: 4000 });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("fullscreenchange", handleFullscreen);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("fullscreenchange", handleFullscreen);
+      if (document.exitFullscreen) document.exitFullscreen();
+    };
+    // eslint-disable-next-line
+  }, []);
 
   // Check if user already took test
   useEffect(() => {
@@ -61,9 +118,12 @@ export default function Test() {
       const result = await evaluateAnswer(answer, aiModel);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
-      // Mark test as taken after first submit and update score in DB
+      // Enforce 70% context relevancy threshold
+      const relevancy = typeof result.relevancy === "number" ? result.relevancy : (typeof result.score === "number" ? result.score : 0);
+      const isCorrect = relevancy >= 70;
+      // Mark test as taken after first submit and update score in DB only if correct
       const user = JSON.parse(localStorage.getItem("user"));
-      if (user && !user.testTaken) {
+      if (user && !user.testTaken && isCorrect) {
         await fetch(`${import.meta.env.VITE_API_BASE}/api/mark-test-taken`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -90,20 +150,116 @@ export default function Test() {
   };
 
   const handleNext = async () => {
+    // If last question, show completion toast
+    if (question.number === question.total) {
+      toast({
+        title: "Test Completed!",
+        description: "You have finished all questions. Results will be reviewed by admin.",
+        status: "success",
+        duration: 4000,
+        isClosable: true
+      });
+      setTestBlocked(true);
+      // Optionally, trigger any post-test logic here
+      return;
+    }
     setQuestion(q0 => ({ ...q0, number: q0.number + 1 }));
     await loadQuestion();
   };
 
-  if (testBlocked) {
+  if (testBlocked || forceExit) {
     return (
       <Box maxW="700px" mx="auto" mt={8}>
-        <Alert status="info" borderRadius="md" mb={8}>
+        <Alert status={forceExit ? "error" : "info"} borderRadius="md" mb={8}>
           <AlertIcon />
-          You have already taken the test. You cannot take it again.
+          {forceExit
+            ? "Test exited due to leaving fullscreen or too many tab switches. Please contact admin to retake."
+            : "You have already taken the test. You cannot take it again."}
         </Alert>
+        {adminNotification && (
+          <Alert status="info" borderRadius="md" mt={4}>
+            <AlertIcon />
+            <Box>
+              <AlertTitle>Admin Message</AlertTitle>
+              <AlertDescription>{adminNotification}</AlertDescription>
+            </Box>
+          </Alert>
+        )}
       </Box>
     );
   }
+
+  // --- Speech-to-text logic ---
+  const startRecognition = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US'; // You can set to 'auto' or let user pick
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setVoiceAnswer(transcript);
+      setIsRecording(false);
+    };
+    recognition.onerror = () => {
+      setIsRecording(false);
+    };
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+    recognitionRef.current = recognition;
+    setIsRecording(true);
+    recognition.start();
+  };
+
+  const stopRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleVoiceSubmit = async (e) => {
+    e.preventDefault();
+    if (!voiceAnswer.trim()) return;
+    setLoading(true);
+    try {
+      const result = await evaluateAnswer(voiceAnswer, aiModel);
+      setEvalResult(result);
+      toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
+      // Enforce 70% context relevancy threshold
+      const relevancy = typeof result.relevancy === "number" ? result.relevancy : (typeof result.score === "number" ? result.score : 0);
+      const isCorrect = relevancy >= 70;
+      // Mark test as taken after first submit and update score in DB only if correct
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user && !user.testTaken && isCorrect) {
+        await fetch(`${import.meta.env.VITE_API_BASE}/api/mark-test-taken`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email })
+        });
+        if (typeof result.score === "number") {
+          try {
+            await updateUserScore(user.email, result.score);
+            user.score = result.score;
+          } catch (err) {
+            toast({ title: "Failed to save score", status: "error" });
+          }
+        }
+        user.testTaken = true;
+        localStorage.setItem("user", JSON.stringify(user));
+        setTestBlocked(true);
+      }
+    } catch (err) {
+      toast({ title: "API Error", description: err.message, status: "error", duration: 3000, isClosable: true });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box maxW="700px" mx="auto" mt={8}>
@@ -164,7 +320,56 @@ export default function Test() {
             )}
           </TabPanel>
           <TabPanel>
-            <Text color="gray.400">Voice input coming soon!</Text>
+            <form onSubmit={handleVoiceSubmit}>
+              <VStack align="stretch" spacing={4}>
+                <Textarea
+                  placeholder="Your answer will appear here... (any language)"
+                  value={voiceAnswer}
+                  onChange={e => setVoiceAnswer(e.target.value)}
+                  minH="100px"
+                  bg="rgba(15,18,24,0.8)"
+                  color="white"
+                  isDisabled={loading || qLoading || !!evalResult}
+                />
+                <HStack>
+                  <Button
+                    leftIcon={<Icon as={isRecording ? FaStop : FaMicrophone} />}
+                    colorScheme={isRecording ? "red" : "cyan"}
+                    onClick={isRecording ? stopRecognition : startRecognition}
+                    isDisabled={loading || qLoading || !!evalResult}
+                  >
+                    {isRecording ? "Stop Recording" : "Start Recording"}
+                  </Button>
+                  <Button
+                    colorScheme="cyan"
+                    type="submit"
+                    isLoading={loading}
+                    isDisabled={qLoading || !!evalResult || !voiceAnswer.trim()}
+                  >
+                    Submit Answer
+                  </Button>
+                </HStack>
+                {evalResult && (
+                  <VStack mt={6} spacing={4} align="stretch">
+                    <Alert status={evalResult.score === 1 ? "success" : "warning"} borderRadius="md">
+                      <AlertIcon />
+                      <Box>
+                        <AlertTitle>Feedback</AlertTitle>
+                        <AlertDescription>
+                          <Text><b>Context Relevancy:</b> {evalResult.relevancy !== null ? evalResult.relevancy + "%" : "N/A"}</Text>
+                          <Text><b>Correctness:</b> {evalResult.correctness === true ? "Correct" : evalResult.correctness === false ? "Incorrect" : "N/A"}</Text>
+                          <Text><b>Score:</b> {evalResult.score !== null ? evalResult.score : "N/A"}</Text>
+                          <Text mt={2} color="gray.400" fontSize="sm">AI Feedback: {evalResult.aiText}</Text>
+                        </AlertDescription>
+                      </Box>
+                    </Alert>
+                    <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end">
+                      Next Question
+                    </Button>
+                  </VStack>
+                )}
+              </VStack>
+            </form>
           </TabPanel>
         </TabPanels>
       </Tabs>

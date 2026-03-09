@@ -11,7 +11,7 @@ var currentTest = {
     videoPermission: false
 };
 
-var TEST_QUESTIONS_COUNT = 5;
+var TEST_QUESTIONS_COUNT = 15;
 
 // Request microphone and video permissions before test
 async function requestPermissions() {
