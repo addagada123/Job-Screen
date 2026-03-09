@@ -8,15 +8,9 @@
 
 	const app = express();
 
-	// CORS configuration - allow Vercel frontend
+	// CORS configuration - allow all origins
 	const corsOptions = {
-		origin: [
-			'http://localhost:5173',
-			'http://localhost:3300',
-			'https://job-screen-87tyvbx2-addagada123s-projects.vercel.app',
-			'https://job-screen-git-*-.vercel.app',
-			'https://*.vercel.app'
-		],
+		origin: '*',
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization']
