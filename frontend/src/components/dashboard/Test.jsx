@@ -25,6 +25,7 @@ export default function Test() {
   });
   const [loading, setLoading] = useState(false);
   const [aiModel, setAiModel] = useState("openai");
+  const [selectedLanguage, setSelectedLanguage] = useState(() => localStorage.getItem("selectedLanguage") || "English");
   const [evalResult, setEvalResult] = useState(null);
   const [qLoading, setQLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
@@ -93,29 +94,41 @@ export default function Test() {
     // eslint-disable-next-line
   }, []);
 
+  // Get detected skills and language from localStorage
+  function getSkillsAndLanguage() {
+    const skills = JSON.parse(localStorage.getItem("skills") || "[]");
+    const language = selectedLanguage;
+    return { skills, language };
+  }
+
   async function loadQuestion() {
     setQLoading(true);
-    try {
-      const q = await generateQuestion(aiModel);
-      setQuestion(q0 => ({
-        ...q0,
-        text: q.text,
-        category: q.category
-      }));
-      setEvalResult(null);
-      setAnswer("");
-    } catch {
-      toast({ title: "Failed to load question", status: "error" });
-    } finally {
-      setQLoading(false);
-    }
+      <Box
+        p={6}
+        borderRadius="2xl"
+        bg="rgba(255, 255, 255, 0.02)"
+        border="1px solid rgba(255, 255, 255, 0.05)"
+        mb={6}
+      >
+        <Text color="blue.400" fontWeight="bold" mb={1}>
+          Note: All questions are always in English.
+        </Text>
+        <Text color="gray.400" mb={2}>
+          Question {question.number} of {question.total}
+        </Text>
+        <Text fontWeight="600" fontSize="xl" mb={4}>
+          {qLoading ? "Loading..." : question.text}
+        </Text>
+        <Tag colorScheme="purple" mb={2}>{question.category}</Tag>
+      </Box>
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await evaluateAnswer(answer, aiModel);
+      const { language } = getSkillsAndLanguage();
+      const result = await evaluateAnswer(answer, aiModel, language);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       // Enforce 70% context relevancy threshold
@@ -197,7 +210,19 @@ export default function Test() {
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US'; // You can set to 'auto' or let user pick
+    // Try to use selected language code, fallback to en-US
+    let langCode = 'en-US';
+    if (selectedLanguage === 'Hindi') langCode = 'hi-IN';
+    else if (selectedLanguage === 'Telugu') langCode = 'te-IN';
+    else if (selectedLanguage === 'Tamil') langCode = 'ta-IN';
+    else if (selectedLanguage === 'Kannada') langCode = 'kn-IN';
+    else if (selectedLanguage === 'French') langCode = 'fr-FR';
+    else if (selectedLanguage === 'Spanish') langCode = 'es-ES';
+    else if (selectedLanguage === 'German') langCode = 'de-DE';
+    else if (selectedLanguage === 'Chinese') langCode = 'zh-CN';
+    else if (selectedLanguage === 'Japanese') langCode = 'ja-JP';
+    else if (selectedLanguage === 'Arabic') langCode = 'ar-SA';
+    recognition.lang = langCode;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
@@ -228,7 +253,8 @@ export default function Test() {
     if (!voiceAnswer.trim()) return;
     setLoading(true);
     try {
-      const result = await evaluateAnswer(voiceAnswer, aiModel);
+      const { language } = getSkillsAndLanguage();
+      const result = await evaluateAnswer(voiceAnswer, aiModel, language);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       // Enforce 70% context relevancy threshold
@@ -272,11 +298,36 @@ export default function Test() {
         <Heading size="lg" mb={2}>{qLoading ? "Loading..." : question.text}</Heading>
         <Tag colorScheme="cyan" mt={2}>{question.category}</Tag>
       </Box>
-      <Select mb={4} value={aiModel} onChange={e => setAiModel(e.target.value)} maxW="250px" isDisabled={loading || qLoading}>
-        <option value="openai">OpenAI</option>
-        <option value="gemini">Gemini</option>
-        <option value="deepseek">DeepSeek</option>
-      </Select>
+      <HStack mb={4} spacing={4} align="start">
+        <Box>
+          <Text fontSize="sm" mb={1} color="gray.300">AI Model</Text>
+          <Select value={aiModel} onChange={e => setAiModel(e.target.value)} maxW="200px" isDisabled={loading || qLoading}>
+            <option value="openai">OpenAI</option>
+            <option value="gemini">Gemini</option>
+            <option value="deepseek">DeepSeek</option>
+          </Select>
+        </Box>
+        <Box>
+          <Text fontSize="sm" mb={1} color="gray.300">Language</Text>
+          <Select value={selectedLanguage} onChange={e => {
+            setSelectedLanguage(e.target.value);
+            localStorage.setItem("selectedLanguage", e.target.value);
+          }} maxW="200px" isDisabled={loading || qLoading}>
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Chinese">Chinese</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Russian">Russian</option>
+            <option value="Arabic">Arabic</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Bengali">Bengali</option>
+            <option value="Other">Other</option>
+          </Select>
+        </Box>
+      </HStack>
       <Tabs variant="soft-rounded" colorScheme="cyan" mb={4}>
         <TabList>
           <Tab>Type</Tab>
