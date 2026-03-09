@@ -2,7 +2,8 @@
 import { Box, Heading, VStack, Text, Button, Input, useToast } from "@chakra-ui/react";
 import { useRef, useState } from "react";
 import { uploadResume } from "../../api";
-import * as pdfjsLib from "pdfjs-dist/build/pdf";
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.entry";
 import mammoth from "mammoth";
 
 export default function Resume() {
