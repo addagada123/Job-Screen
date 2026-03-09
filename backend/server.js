@@ -13,6 +13,7 @@
 	const corsOptions = {
 		origin: [
 			'https://job-screen-pv2jw2zca-addagada123s-projects.vercel.app',
+			'https://job-screen-98f5bh6wz-addagada123s-projects.vercel.app',
 			'http://localhost:5173',
 			'http://localhost:3000'
 		],
