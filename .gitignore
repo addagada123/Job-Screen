@@ -3,3 +3,14 @@ server/.env
 .env
 frontend/.env
 backend/.env
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+dist/
+build/
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+.env
+dist/
+build/
