@@ -114,11 +114,11 @@ export async function askDeepSeek(prompt) {
 }
 
 // Evaluate answer
-export async function evaluateAnswer(prompt, model) {
+export async function evaluateAnswer(prompt, model, language = "English") {
   const res = await fetch(`${API_BASE}/api/evaluate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model })
+    body: JSON.stringify({ prompt, model, language, type: "evaluation" })
   });
   if (!res.ok) throw new Error("Evaluation API error");
   return res.json();

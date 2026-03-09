@@ -15,7 +15,6 @@
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization']
 	};
-	app.use(cors(corsOptions));
 	app.use(express.json());
 
 	// Google OAuth2 client
@@ -288,6 +287,10 @@
 			res.status(500).json({ error: 'Failed to delete user', details: err.message });
 		}
 	});
+
+	// Mount AI router
+	const aiRouter = require('./ai');
+	app.use('/api', aiRouter);
 
 	// Start server
 	const PORT = process.env.PORT || 5000;

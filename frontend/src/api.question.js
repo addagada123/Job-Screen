@@ -25,14 +25,14 @@ export const staticQuestions = [
   }
 ];
 
-export async function generateQuestion(model = "openai") {
+export async function generateQuestion(model = "openai", skills = [], language = "English") {
   // Try AI first
   try {
     const prompt = "Generate a single interview question with category. Respond as JSON: {text: string, category: string}";
     const res = await fetch(`${API_BASE}/api/evaluate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, model })
+      body: JSON.stringify({ prompt, model, skills, language, type: "question" })
     });
     if (!res.ok) throw new Error("AI error");
     const data = await res.json();
