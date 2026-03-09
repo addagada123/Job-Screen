@@ -3,15 +3,14 @@
 	const cors = require('cors');
 	const dotenv = require('dotenv');
 	const { OAuth2Client } = require('google-auth-library');
-	const fs = require('fs');
-	const path = require('path');
+	const { MongoClient, ObjectId } = require('mongodb');
 	dotenv.config();
 
 	const app = express();
 
 	// CORS configuration
 	app.use(cors({
-		origin: ['http://localhost:5173', 'http://localhost:3300', 'https://your-app.vercel.app'],
+		origin: ['http://localhost:5173', 'http://localhost:3300', 'https://*.vercel.app'],
 		credentials: true
 	}));
 	app.use(express.json());
@@ -19,50 +18,28 @@
 	// Google OAuth2 client
 	const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-	// JSON file paths
-	const usersFilePath = path.join(__dirname, 'data', 'users.json');
-	const scoresFilePath = path.join(__dirname, 'data', 'scores.json');
+	// MongoDB setup
+	const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://Bhanuteja:Addagada%40123@cluster0.xdcsxyh.mongodb.net/?appName=Cluster0';
+	const mongoClient = new MongoClient(mongoUri);
+	let db, usersCollection, scoresCollection;
 
-	// Helper functions for JSON file operations
-	function readUsers() {
+	async function connectDb() {
 		try {
-			if (fs.existsSync(usersFilePath)) {
-				const data = fs.readFileSync(usersFilePath, 'utf8');
-				return JSON.parse(data);
-			}
+			await mongoClient.connect();
+			db = mongoClient.db('jobscreen');
+			usersCollection = db.collection('users');
+			scoresCollection = db.collection('scores');
+			
+			// Create indexes
+			await usersCollection.createIndex({ email: 1 }, { unique: true });
+			await scoresCollection.createIndex({ email: 1 });
+			
+			console.log('Connected to MongoDB');
 		} catch (err) {
-			console.error('Error reading users:', err);
-		}
-		return [];
-	}
-
-	function writeUsers(users) {
-		try {
-			fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-		} catch (err) {
-			console.error('Error writing users:', err);
+			console.error('MongoDB connection error:', err);
 		}
 	}
-
-	function readScores() {
-		try {
-			if (fs.existsSync(scoresFilePath)) {
-				const data = fs.readFileSync(scoresFilePath, 'utf8');
-				return JSON.parse(data);
-			}
-		} catch (err) {
-			console.error('Error reading scores:', err);
-		}
-		return [];
-	}
-
-	function writeScores(scores) {
-		try {
-			fs.writeFileSync(scoresFilePath, JSON.stringify(scores, null, 2));
-		} catch (err) {
-			console.error('Error writing scores:', err);
-		}
-	}
+	connectDb();
 
 	// Google Sign-In endpoint
 	app.post('/api/google-auth', async (req, res) => {
@@ -80,12 +57,10 @@
 			const { sub, email, name, picture } = payload;
 			const firstName = name.split(' ')[0];
 
-			// Check if user exists in JSON file, else create
-			let users = readUsers();
-			let user = users.find(u => u.email === email);
+			// Check if user exists, else create
+			let user = await usersCollection.findOne({ email });
 			if (!user) {
 				user = {
-					id: Date.now().toString(),
 					googleId: sub,
 					email,
 					name,
@@ -93,16 +68,17 @@
 					picture,
 					role: 'candidate',
 					score: null,
+					createdAt: new Date()
 				};
-				users.push(user);
-				writeUsers(users);
+				await usersCollection.insertOne(user);
+				user = await usersCollection.findOne({ email });
 			}
 
 			// Return user info
 			res.json({
 				success: true,
 				user: {
-					id: user.id,
+					id: user._id.toString(),
 					email: user.email,
 					name: user.name,
 					firstName: user.firstName,
@@ -124,19 +100,17 @@
 			return res.status(400).json({ error: 'Missing email or score' });
 		}
 		try {
-			let users = readUsers();
-			const userIndex = users.findIndex(u => u.email === email);
-			if (userIndex === -1) {
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { score } }
+			);
+			if (result.matchedCount === 0) {
 				return res.status(404).json({ error: 'User not found' });
 			}
-			users[userIndex].score = score;
-			writeUsers(users);
-
-			// Also update scores.json
-			let scores = readScores();
-			scores.push({ email, score, date: new Date().toISOString() });
-			writeScores(scores);
-
+			
+			// Also save to scores collection
+			await scoresCollection.insertOne({ email, score, date: new Date() });
+			
 			res.json({ success: true });
 		} catch (err) {
 			res.status(500).json({ error: 'Failed to update score', details: err.message });
@@ -150,13 +124,12 @@
 			return res.status(400).json({ error: 'Missing email or password' });
 		}
 		try {
-			const users = readUsers();
-			const user = users.find(u => u.email === email && u.password === password);
+			const user = await usersCollection.findOne({ email, password });
 			if (!user) {
 				return res.status(401).json({ error: 'Invalid credentials' });
 			}
 			res.json({
-				id: user.id,
+				id: user._id.toString(),
 				email: user.email,
 				name: user.name,
 				firstName: user.firstName,
@@ -176,25 +149,22 @@
 			return res.status(400).json({ error: 'Missing required fields' });
 		}
 		try {
-			const users = readUsers();
-			const existingUser = users.find(u => u.email === email);
+			const existingUser = await usersCollection.findOne({ email });
 			if (existingUser) {
 				return res.status(409).json({ error: 'User already exists' });
 			}
 
 			const newUser = {
-				id: Date.now().toString(),
 				name,
 				email,
 				password,
 				firstName: name.split(' ')[0],
 				role: requestAdmin ? 'pending_admin' : 'candidate',
 				score: null,
-				createdAt: new Date().toISOString()
+				createdAt: new Date()
 			};
 
-			users.push(newUser);
-			writeUsers(users);
+			await usersCollection.insertOne(newUser);
 
 			if (requestAdmin) {
 				return res.json({ success: true, pending: true, message: 'Admin request pending approval' });
@@ -209,26 +179,26 @@
 	// Get all users (admin)
 	app.get('/api/users', async (req, res) => {
 		try {
-			const users = readUsers();
+			const users = await usersCollection.find({}).toArray();
 			res.json(users.map(u => ({
-				id: u.id,
+				id: u._id.toString(),
 				email: u.email,
 				name: u.name,
 				role: u.role,
 				score: u.score
 			})));
 		} catch (err) {
-			res.status(500).json({ error: 'Failed to fetch users' });
+			res.status(500).json({ error: 'Failed to fetch users', details: err.message });
 		}
 	});
 
 	// Get all scores (admin)
 	app.get('/api/scores', async (req, res) => {
 		try {
-			const scores = readScores();
+			const scores = await scoresCollection.find({}).toArray();
 			res.json(scores);
 		} catch (err) {
-			res.status(500).json({ error: 'Failed to fetch scores' });
+			res.status(500).json({ error: 'Failed to fetch scores', details: err.message });
 		}
 	});
 
@@ -239,30 +209,80 @@
 			return res.status(400).json({ error: 'Missing email or resume text' });
 		}
 		try {
-			let users = readUsers();
-			const userIndex = users.findIndex(u => u.email === email);
-			if (userIndex !== -1) {
-				users[userIndex].resume = resumeText;
-				writeUsers(users);
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { resume: resumeText } }
+			);
+			if (result.matchedCount === 0) {
+				return res.status(404).json({ error: 'User not found' });
 			}
 			res.json({ success: true });
 		} catch (err) {
-			res.status(500).json({ error: 'Failed to upload resume' });
+			res.status(500).json({ error: 'Failed to upload resume', details: err.message });
 		}
 	});
 
 	// Get resume
 	app.get('/api/resume/:email', async (req, res) => {
 		try {
-			const users = readUsers();
-			const user = users.find(u => u.email === req.params.email);
+			const user = await usersCollection.findOne({ email: req.params.email });
 			if (user && user.resume) {
 				res.json({ resume: user.resume });
 			} else {
 				res.json({ resume: null });
 			}
 		} catch (err) {
-			res.status(500).json({ error: 'Failed to fetch resume' });
+			res.status(500).json({ error: 'Failed to fetch resume', details: err.message });
+		}
+	});
+
+	// Get user by ID (admin)
+	app.get('/api/user/:id', async (req, res) => {
+		try {
+			const user = await usersCollection.findOne({ _id: new ObjectId(req.params.id) });
+			if (user) {
+				res.json({
+					id: user._id.toString(),
+					email: user.email,
+					name: user.name,
+					role: user.role,
+					score: user.score
+				});
+			} else {
+				res.status(404).json({ error: 'User not found' });
+			}
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to fetch user', details: err.message });
+		}
+	});
+
+	// Update user role (admin)
+	app.put('/api/user/:id/role', async (req, res) => {
+		const { role } = req.body;
+		try {
+			const result = await usersCollection.updateOne(
+				{ _id: new ObjectId(req.params.id) },
+				{ $set: { role } }
+			);
+			if (result.matchedCount === 0) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to update role', details: err.message });
+		}
+	});
+
+	// Delete user (admin)
+	app.delete('/api/user/:id', async (req, res) => {
+		try {
+			const result = await usersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+			if (result.deletedCount === 0) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to delete user', details: err.message });
 		}
 	});
 
