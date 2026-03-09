@@ -1,10 +1,9 @@
-import { Box, Text, Link, VStack } from "@chakra-ui/react";
-import AuthForm from "../components/AuthForm";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@chakra-ui/react";
-import { motion } from "framer-motion";
 
-const MotionBox = motion(Box);
+import { Box, Text, Link, useToast } from "@chakra-ui/react";
+import AuthForm from "../components/AuthForm";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import { useNavigate } from "react-router-dom";
+import { login } from "../api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,14 +15,9 @@ export default function Login() {
     const email = form.email.value;
     const password = form.password.value;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
-      localStorage.setItem("user", JSON.stringify(data));
+      const user = await login(email, password);
+      localStorage.setItem("user", JSON.stringify(user));
+      toast({ title: "Login successful!", status: "success" });
       navigate("/dashboard");
     } catch (err) {
       toast({ title: "Login failed", description: err.message, status: "error" });
@@ -31,109 +25,38 @@ export default function Login() {
   };
 
   return (
-    <Box
-      minH="100vh"
-      width="100vw"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      position="relative"
-      overflow="hidden"
-    >
-      {/* Animated Background */}
+    <Box minH="80vh" display="flex" alignItems="center" justifyContent="center" position="relative">
+      {/* Background Effects */}
       <Box
         position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
-        zIndex={0}
-      >
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          bgGradient="linear(to-br, #0a0a0f 0%, #0f0f1a 50%, #0a0a0f 100%)"
-        />
-        
-        {/* Animated Orbs */}
-        <MotionBox
-          position="absolute"
-          top="20%"
-          left="10%"
-          w="350px"
-          h="350px"
-          borderRadius="full"
-          bg="rgba(99, 102, 241, 0.12)"
-          filter="blur(80px)"
-          animate={{
-            x: [0, 30, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <MotionBox
-          position="absolute"
-          bottom="20%"
-          right="10%"
-          w="300px"
-          h="300px"
-          borderRadius="full"
-          bg="rgba(139, 92, 246, 0.1)"
-          filter="blur(80px)"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-        />
-        
-        {/* Grid Pattern */}
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          opacity={0.02}
-          backgroundImage="linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)"
-          backgroundSize="50px 50px"
-        />
-      </Box>
-
-      {/* Content */}
-      <VStack spacing={6} zIndex={1} px={4} w="100%" maxW="450px" pt={24}>
+        top="20%"
+        left="10%"
+        w="300px"
+        h="300px"
+        borderRadius="full"
+        bg="rgba(99, 102, 241, 0.1)"
+        filter="blur(80px)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute"
+        bottom="20%"
+        right="10%"
+        w="250px"
+        h="250px"
+        borderRadius="full"
+        bg="rgba(139, 92, 246, 0.08)"
+        filter="blur(60px)"
+        pointerEvents="none"
+      />
+      
+      <Box position="relative" zIndex={1}>
         <AuthForm type="login" onSubmit={handleLogin} />
-        
-        <MotionBox
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Text textAlign="center" color="gray.500" fontSize="sm">
-            Don't have an account?{" "}
-            <Link 
-              color="#8b5cf6" 
-              fontWeight="600"
-              _hover={{ color: "#a78bfa" }}
-              href="/signup"
-            >
-              Sign up
-            </Link>
-          </Text>
-        </MotionBox>
-      </VStack>
+        <GoogleAuthButton mode="login" />
+        <Text mt={4} textAlign="center" color="gray.400">
+          No account? <Link color="#6366f1" href="/signup">Sign up</Link>
+        </Text>
+      </Box>
     </Box>
   );
 }
