@@ -13,7 +13,7 @@ import {
 
 import { useRef, useState } from "react";
 import { uploadResume } from "../../api";
-
+import mammoth from "mammoth";
 
 function Resume() {
 
@@ -47,22 +47,32 @@ function Resume() {
       const fileType = file.name.split(".").pop().toLowerCase();
 
       // ================= PDF Parsing =================
+
       if (fileType === "pdf") {
+
         const arrayBuffer = await file.arrayBuffer();
-        // Dynamically import pdfjs-dist for Vite compatibility
+
         const pdfjsLib = await import("pdfjs-dist");
-        // Use the workerSrc from the default build
-        if (pdfjsLib.GlobalWorkerOptions) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
         let textContent = "";
+
         for (let i = 1; i <= pdf.numPages; i++) {
+
           const page = await pdf.getPage(i);
+
           const txt = await page.getTextContent();
+
           textContent += txt.items.map(item => item.str).join(" ") + "\n";
+
         }
+
         resumeText = textContent;
+
       }
 
       // ================= DOCX Parsing =================
@@ -109,32 +119,73 @@ function Resume() {
         return;
       }
 
-      // ================= Skill Extraction =================
+      // ================= Blue Collar Skill Detection =================
 
       const SKILL_LIST = [
 
-        // Languages
-        "javascript","typescript","python","java","c++","c#","go","php","ruby","swift","kotlin",
+        // Construction
+        "masonry",
+        "bricklaying",
+        "plastering",
+        "tiling",
+        "cement work",
+        "concrete work",
+        "scaffolding",
+        "roofing",
+        "flooring",
 
-        // Frameworks
-        "react","angular","vue","node.js","express","django","flask","spring",".net",
+        // Plumbing
+        "plumbing",
+        "pipe fitting",
+        "pipe installation",
+        "drainage",
+        "leak repair",
+        "water supply",
 
-        // Databases
-        "sql","mysql","postgresql","mongodb","firebase",
+        // Electrical
+        "electrician",
+        "electrical wiring",
+        "circuit repair",
+        "switchboard installation",
+        "lighting installation",
+        "motor repair",
 
-        // Cloud
-        "aws","azure","gcp",
+        // Carpentry
+        "carpentry",
+        "wood cutting",
+        "furniture making",
+        "cabinet making",
+        "door installation",
+        "window installation",
 
-        // DevOps
-        "docker","kubernetes","git","linux","bash","shell",
+        // Welding / metal
+        "welding",
+        "fabrication",
+        "metal cutting",
+        "lathe machine",
 
-        // Web
-        "html","css","sass","less","graphql","rest","api",
+        // Drivers
+        "driver",
+        "truck driving",
+        "delivery",
+        "forklift",
+
+        // Agriculture
+        "farming",
+        "tractor operation",
+        "harvesting",
+        "irrigation",
+
+        // General labour
+        "construction labor",
+        "material handling",
+        "loading unloading",
 
         // Soft skills
-        "leadership","communication","teamwork","problem solving",
-        "critical thinking","adaptability","creativity",
-        "time management","collaboration","project management"
+        "teamwork",
+        "punctual",
+        "hardworking",
+        "safety compliance"
 
       ];
 
@@ -149,9 +200,7 @@ function Resume() {
         const regex = new RegExp("\\b" + escaped + "\\b", "i");
 
         if (regex.test(textLower)) {
-
           foundSkills.add(skill);
-
         }
 
       }
@@ -162,12 +211,11 @@ function Resume() {
 
       localStorage.setItem("skills", JSON.stringify(skillArray));
 
-      // ================= Upload to Backend =================
+      // ================= Upload Resume =================
 
       await uploadResume(user.email, resumeText);
 
       setResumeName(file.name);
-
       setUploaded(true);
 
       toast({
@@ -204,7 +252,7 @@ function Resume() {
     <Box
       maxW="600px"
       mx="auto"
-      mt={8}
+      mt={20}
       bg="rgba(30,38,51,0.7)"
       borderRadius="2xl"
       p={8}
@@ -245,19 +293,15 @@ function Resume() {
               <Box mt={2}>
 
                 <Text color="cyan.300" fontSize="sm" mb={1}>
-                  Skills detected:
+                  Skills detected
                 </Text>
 
                 <Wrap>
 
                   {skills.map(skill => (
-
                     <WrapItem key={skill}>
-                      <Tag colorScheme="cyan">
-                        {skill}
-                      </Tag>
+                      <Tag colorScheme="cyan">{skill}</Tag>
                     </WrapItem>
-
                   ))}
 
                 </Wrap>
@@ -265,7 +309,6 @@ function Resume() {
               </Box>
 
             )}
-
           </>
         )}
 

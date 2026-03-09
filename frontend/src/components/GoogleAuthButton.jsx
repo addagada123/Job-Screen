@@ -11,7 +11,10 @@ export default function GoogleAuthButton({ mode = 'login' }) {
     <GoogleLogin
       onSuccess={async (credentialResponse) => {
         try {
-          await googleAuth(credentialResponse.credential, mode);
+          const result = await googleAuth(credentialResponse.credential, mode);
+          if (result && result.user) {
+            localStorage.setItem("user", JSON.stringify(result.user));
+          }
           toast({ title: 'Google Auth Success', status: 'success' });
           navigate('/dashboard');
         } catch (err) {

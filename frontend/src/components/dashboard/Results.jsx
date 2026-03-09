@@ -23,7 +23,7 @@ export default function Results() {
   }, []);
 
   return (
-    <Box maxW="600px" mx="auto" mt={8} bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} boxShadow="xl">
+    <Box maxW="600px" mx="auto" mt={20} bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} boxShadow="xl">
       <Heading size="lg" mb={6} textAlign="center">Test Results</Heading>
       {resultMsg && (
         <Alert status="info" borderRadius="md" mb={6}>

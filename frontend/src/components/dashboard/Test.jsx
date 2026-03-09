@@ -288,7 +288,7 @@ export default function Test() {
   };
 
   return (
-    <Box maxW="700px" mx="auto" mt={8}>
+    <Box maxW="700px" mx="auto" mt={20}>
       <HStack justify="space-between" mb={4}>
         <Text>Question {question.number}/{question.total}</Text>
         <Text fontWeight="bold" color="cyan.300" fontSize="xl">00:{question.time.toString().padStart(2, '0')}</Text>

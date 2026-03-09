@@ -1,4 +1,4 @@
-import { Box, Flex, Text, VStack, Button, useToast, Alert, AlertIcon } from "@chakra-ui/react";
+import { Box, Flex, Text, VStack, Button, useToast, Alert, AlertIcon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useDisclosure } from "@chakra-ui/react";
 import Sidebar from "../components/dashboard/Sidebar";
 import Test from "../components/dashboard/Test";
 import Results from "../components/dashboard/Results";
@@ -9,6 +9,7 @@ import AdminUsers from "../components/dashboard/AdminUsers";
 import { Outlet, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
+  // Ensure margin-top for navbar offset
   return (
     <Box mt={20} maxW="600px" mx="auto" p={6} borderRadius="2xl" bg="rgba(255,255,255,0.02)" border="1px solid rgba(255,255,255,0.05)">
       <VStack spacing={6} align="stretch">
@@ -53,6 +54,7 @@ function Overview() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       p={8}
+      mt={20}
     >
       <VStack spacing={6} align="stretch">
         <Text
@@ -79,6 +81,7 @@ function Overview() {
   );
 }
 
+
 export default function Dashboard({ hideSidebar }) {
   const [user, setUser] = useState(null);
   const [resumeUploaded, setResumeUploaded] = useState(!!localStorage.getItem("resumeUploaded"));
@@ -89,6 +92,8 @@ export default function Dashboard({ hideSidebar }) {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [pendingTest, setPendingTest] = useState(false);
 
   // Hide sidebar/navbar if on /test route
   const isTestRoute = location.pathname.includes("/test");
@@ -180,7 +185,7 @@ export default function Dashboard({ hideSidebar }) {
               resumeUploaded={resumeUploaded}
               testTaken={testTaken}
               onUploadResume={() => navigate("/dashboard/resume")}
-              onTakeTest={async () => {
+              onTakeTest={() => {
                 if (!resumeUploaded) {
                   toast({ title: "Please upload your resume first.", status: "warning" });
                   return;
@@ -189,14 +194,8 @@ export default function Dashboard({ hideSidebar }) {
                   toast({ title: "You have already taken the test.", status: "info" });
                   return;
                 }
-                if (!window.confirm("Do you want to take the test now? You can only take it once.")) return;
-                // Ask for mic permission
-                try {
-                  await navigator.mediaDevices.getUserMedia({ audio: true });
-                  navigate("/dashboard/test");
-                } catch {
-                  toast({ title: "Microphone permission denied.", status: "error" });
-                }
+                setPendingTest(true);
+                onOpen();
               }}
               onViewResults={() => navigate("/dashboard/results")}
             />
@@ -210,6 +209,32 @@ export default function Dashboard({ hideSidebar }) {
           <Route path="admin-users" element={<AdminUsers />} />
         </Routes>
         <Outlet />
+
+        {/* Modal for test confirmation */}
+        <Modal isOpen={isOpen} onClose={() => { setPendingTest(false); onClose(); }} isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Take Test</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              Are you sure you want to take the test now? You can only take it once. Microphone permission will be requested.
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={() => { setPendingTest(false); onClose(); }} mr={3} variant="ghost">Cancel</Button>
+              <Button colorScheme="green" onClick={async () => {
+                try {
+                  await navigator.mediaDevices.getUserMedia({ audio: true });
+                  onClose();
+                  navigate("/dashboard/test");
+                } catch {
+                  toast({ title: "Microphone permission denied.", status: "error" });
+                  onClose();
+                }
+                setPendingTest(false);
+              }}>Start Test</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Box>
     </Flex>
   );
