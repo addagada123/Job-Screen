@@ -24,7 +24,7 @@ export default function GoogleAuthButton({ mode = 'login' }) {
       onError={() => {
         toast({ title: 'Google Auth Failed', status: 'error' });
       }}
-      width="100%"
+      width={300}
     />
   );
 }
