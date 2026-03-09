@@ -176,7 +176,7 @@ export default function Dashboard({ hideSidebar }) {
         minH="100vh"
         position="relative"
         zIndex={1}
-        mt={!hideSidebar && !isTestRoute ? 20 : 0}
+        mt={28} // Ensures content is always below the navbar
       >
         <Routes>
           <Route path="" element={

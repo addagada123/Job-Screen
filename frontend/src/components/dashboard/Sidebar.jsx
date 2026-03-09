@@ -1,15 +1,16 @@
-import { Box, VStack, Avatar, Text, HStack, Icon } from "@chakra-ui/react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Box, VStack, Avatar, Text, HStack, Icon, useToast } from "@chakra-ui/react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { getCurrentUser } from "../../utils/auth";
 
 const MotionBox = motion(Box);
 
-const NavItem = ({ to, children, isAdmin = false }) => {
+const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   const location = useLocation();
   const isActive = location.pathname.includes(to);
-
   return (
-    <NavLink to={to} style={{ width: "100%" }}>
+    <NavLink to={to} style={{ width: "100%", textDecoration: "none" }} onClick={onClick}>
       <MotionBox
         py={3}
         px={4}
@@ -49,6 +50,25 @@ const NavItem = ({ to, children, isAdmin = false }) => {
 };
 
 export default function Sidebar({ user }) {
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [resumeUploaded, setResumeUploaded] = useState(!!localStorage.getItem("resumeUploaded"));
+
+  useEffect(() => {
+    // Listen for resume upload changes
+    const handler = () => setResumeUploaded(!!localStorage.getItem("resumeUploaded"));
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  const handleTestClick = () => {
+    if (!resumeUploaded) {
+      toast({ title: "Please upload your resume first.", status: "warning" });
+      return;
+    }
+    navigate("/dashboard/test");
+  };
+
   return (
     <MotionBox
       initial={{ x: -100, opacity: 0 }}
@@ -152,7 +172,7 @@ export default function Sidebar({ user }) {
           </Text>
           <NavItem to="overview">📊 Overview</NavItem>
           <NavItem to="resume">📄 Resume</NavItem>
-          <NavItem to="test">🧪 Test</NavItem>
+          <NavItem to="test" onClick={handleTestClick}>🧪 Test</NavItem>
           <NavItem to="results">📈 Results</NavItem>
 
           {user?.isAdmin && (

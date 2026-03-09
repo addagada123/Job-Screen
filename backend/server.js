@@ -294,6 +294,42 @@
 		}
 	});
 
+
+	// Endpoint to get user selection status
+	app.get('/api/user-status', async (req, res) => {
+		const { email } = req.query;
+		if (!email) return res.status(400).json({ error: 'Missing email' });
+		try {
+			const user = await usersCollection.findOne({ email });
+			if (!user) return res.status(404).json({ error: 'User not found' });
+			// selection can be 'selected', 'rejected', or undefined/null
+			res.json({ selection: user.selection });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to fetch user status', details: err.message });
+		}
+	});
+
+
+	// Endpoint for admin to select/reject candidate for next round
+	app.post('/api/admin/select', async (req, res) => {
+		const { email, selection } = req.body;
+		if (!email || !['selected', 'rejected', null, undefined].includes(selection)) {
+			return res.status(400).json({ error: 'Missing or invalid email/selection' });
+		}
+		try {
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { selection } }
+			);
+			if (result.matchedCount === 0) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to update selection', details: err.message });
+		}
+	});
+
 	// Mount AI router
 	const aiRouter = require('./ai');
 	app.use('/api', aiRouter);

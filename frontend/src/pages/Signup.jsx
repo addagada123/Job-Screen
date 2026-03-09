@@ -37,7 +37,7 @@ export default function Signup() {
   };
 
   return (
-    <Box minH="80vh" display="flex" alignItems="center" justifyContent="center" position="relative" mt={20}>
+    <Box minH="80vh" display="flex" alignItems="center" justifyContent="center" position="relative" mt={28}>
       {/* Background Effects */}
       <Box
         position="absolute"
