@@ -84,9 +84,7 @@ export default function Navbar() {
           </HStack>
         </Link>
       </Box>
-
       <Spacer display={{ base: "none", md: "block" }} />
-
       <HStack position="relative" zIndex={1} spacing={3}>
         {user ? (
           <Button

@@ -14,7 +14,9 @@ export default function AdminScores() {
     fetch(`${import.meta.env.VITE_API_BASE}/api/scores?admin=1`)
       .then(res => res.json())
       .then(data => {
-        setScores(data);
+        // Sort by score descending for rank order
+        const sorted = Array.isArray(data) ? [...data].sort((a, b) => (b.score || 0) - (a.score || 0)) : [];
+        setScores(sorted);
         setLoading(false);
       })
       .catch(e => {
