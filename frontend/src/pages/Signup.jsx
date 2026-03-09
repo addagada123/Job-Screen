@@ -61,7 +61,6 @@ export default function Signup() {
       <Box position="relative" zIndex={1}>
         <AuthForm type="signup" onSubmit={handleSignup} />
         {waitMsg && <Text mt={4} textAlign="center" color="yellow.300">{waitMsg}</Text>}
-        <GoogleAuthButton mode="signup" />
         <Text mt={4} textAlign="center" color="gray.400">
           Already have an account? <Link color="#6366f1" href="/login">Login</Link>
         </Text>

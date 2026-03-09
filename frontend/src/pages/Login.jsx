@@ -52,7 +52,6 @@ export default function Login() {
       
       <Box position="relative" zIndex={1}>
         <AuthForm type="login" onSubmit={handleLogin} />
-        <GoogleAuthButton mode="login" />
         <Text mt={4} textAlign="center" color="gray.400">
           No account? <Link color="#6366f1" href="/signup">Sign up</Link>
         </Text>
