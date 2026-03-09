@@ -1,5 +1,0 @@
-# Ignore environment files
-server/.env
-.env
-frontend/.env
-backend/.env
