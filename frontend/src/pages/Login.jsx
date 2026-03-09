@@ -1,7 +1,7 @@
 
 import { Box, Text, Link, useToast } from "@chakra-ui/react";
 import AuthForm from "../components/AuthForm";
-import GoogleAuthButton from "../components/GoogleAuthButton";
+// import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api";
 

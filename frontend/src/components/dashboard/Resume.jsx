@@ -14,7 +14,10 @@ export default function Resume() {
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      toast({ title: "No file selected", status: "error", duration: 2000, isClosable: true });
+      return;
+    }
     setLoading(true);
     try {
       let resumeText = "";
@@ -37,12 +40,18 @@ export default function Resume() {
         const result = await mammoth.extractRawText({ arrayBuffer });
         resumeText = result.value;
       } else {
-        throw new Error("Unsupported file type");
+        toast({ title: "Unsupported file type", description: "Please upload a PDF, DOC, or DOCX file.", status: "error", duration: 3000, isClosable: true });
+        setLoading(false);
+        return;
       }
 
       // Get user email from localStorage (assumes user is logged in)
       const user = JSON.parse(localStorage.getItem("user"));
-      if (!user || !user.email) throw new Error("User email not found. Please log in.");
+      if (!user || !user.email) {
+        toast({ title: "User not logged in", description: "Please log in to upload your resume.", status: "error", duration: 3000, isClosable: true });
+        setLoading(false);
+        return;
+      }
 
       const result = await uploadResume(user.email, resumeText);
       setResumeName(file.name);

@@ -1,7 +1,7 @@
 
 import { Box, Text, Link, useToast } from "@chakra-ui/react";
 import AuthForm from "../components/AuthForm";
-import GoogleAuthButton from "../components/GoogleAuthButton";
+// import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { signup } from "../api";
@@ -28,7 +28,11 @@ export default function Signup() {
         navigate("/login");
       }
     } catch (err) {
-      toast({ title: "Signup failed", description: err.message, status: "error" });
+      if (err.message && err.message.includes('User already exists')) {
+        toast({ title: "Signup failed", description: "An account with this email already exists.", status: "error" });
+      } else {
+        toast({ title: "Signup failed", description: err.message, status: "error" });
+      }
     }
   };
 
