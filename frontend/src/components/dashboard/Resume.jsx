@@ -13,11 +13,7 @@ import {
 
 import { useRef, useState } from "react";
 import { uploadResume } from "../../api";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
-import pdfWorker from "pdfjs-dist/legacy/build/pdf.worker?url";
-import mammoth from "mammoth";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 function Resume() {
 
@@ -51,27 +47,22 @@ function Resume() {
       const fileType = file.name.split(".").pop().toLowerCase();
 
       // ================= PDF Parsing =================
-
       if (fileType === "pdf") {
-
         const arrayBuffer = await file.arrayBuffer();
-
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-        let textContent = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-
-          const page = await pdf.getPage(i);
-
-          const txt = await page.getTextContent();
-
-          textContent += txt.items.map(item => item.str).join(" ") + "\n";
-
+        // Dynamically import pdfjs-dist for Vite compatibility
+        const pdfjsLib = await import("pdfjs-dist");
+        // Use the workerSrc from the default build
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
         }
-
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let textContent = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const txt = await page.getTextContent();
+          textContent += txt.items.map(item => item.str).join(" ") + "\n";
+        }
         resumeText = textContent;
-
       }
 
       // ================= DOCX Parsing =================
