@@ -8,13 +8,19 @@
 
 	const app = express();
 
-	// CORS configuration - allow all origins
+
+	// CORS configuration - allow Vercel frontend and localhost
 	const corsOptions = {
-		origin: '*',
+		origin: [
+			'https://job-screen-pv2jw2zca-addagada123s-projects.vercel.app',
+			'http://localhost:5173',
+			'http://localhost:3000'
+		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization']
 	};
+	app.use(cors(corsOptions));
 	app.use(express.json());
 
 	// Google OAuth2 client
