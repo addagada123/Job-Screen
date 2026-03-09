@@ -1,3 +1,4 @@
+import { Box } from '@chakra-ui/react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
@@ -24,10 +25,11 @@ export default function GoogleAuthButton({ mode = 'login' }) {
   };
 
   return (
-    <GoogleLogin
-      onSuccess={handleSuccess}
-      onError={() => toast({ title: 'Google Auth failed', status: 'error' })}
-      width="100%"
-    />
+    <Box w="100%">
+      <GoogleLogin
+        onSuccess={handleSuccess}
+        onError={() => toast({ title: 'Google Auth failed', status: 'error' })}
+      />
+    </Box>
   );
 }

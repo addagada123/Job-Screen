@@ -95,6 +95,65 @@
 		}
 	});
 
+	// Login endpoint
+	app.post('/api/login', async (req, res) => {
+		const { email, password } = req.body;
+		if (!email || !password) {
+			return res.status(400).json({ error: 'Missing email or password' });
+		}
+		try {
+			const user = await usersCollection.findOne({ email, password });
+			if (!user) {
+				return res.status(401).json({ error: 'Invalid credentials' });
+			}
+			res.json({
+				id: user._id,
+				email: user.email,
+				name: user.name,
+				firstName: user.firstName,
+				role: user.role,
+				score: user.score,
+				isAdmin: user.role === 'admin'
+			});
+		} catch (err) {
+			res.status(500).json({ error: 'Login failed', details: err.message });
+		}
+	});
+
+	// Signup endpoint
+	app.post('/api/signup', async (req, res) => {
+		const { name, email, password, requestAdmin } = req.body;
+		if (!name || !email || !password) {
+			return res.status(400).json({ error: 'Missing required fields' });
+		}
+		try {
+			const existingUser = await usersCollection.findOne({ email });
+			if (existingUser) {
+				return res.status(409).json({ error: 'User already exists' });
+			}
+
+			const newUser = {
+				name,
+				email,
+				password,
+				firstName: name.split(' ')[0],
+				role: requestAdmin ? 'pending_admin' : 'candidate',
+				score: null,
+				createdAt: new Date()
+			};
+
+			await usersCollection.insertOne(newUser);
+
+			if (requestAdmin) {
+				return res.json({ success: true, pending: true, message: 'Admin request pending approval' });
+			}
+
+			res.json({ success: true, message: 'Account created successfully' });
+		} catch (err) {
+			res.status(500).json({ error: 'Signup failed', details: err.message });
+		}
+	});
+
 	// Start server
 	const PORT = process.env.PORT || 5000;
 	app.listen(PORT, () => {
