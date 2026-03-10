@@ -1,3 +1,6 @@
+import { Box, Heading, VStack, Text, Button, Input, useToast, Tag, Wrap, WrapItem } from "@chakra-ui/react";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { uploadResume } from "../../api";
 import { getCurrentUser } from "../../utils/auth";
 
