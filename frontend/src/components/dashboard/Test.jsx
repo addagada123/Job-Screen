@@ -31,7 +31,10 @@ export default function Test() {
   const [qLoading, setQLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
   const [forceExit, setForceExit] = useState(false);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(60);
+  const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
   const [adminNotification, setAdminNotification] = useState("");
+  const timerIntervalRef = useRef(null);
   const toast = useToast();
   const tabSwitches = useRef(0);
   const navigate = useNavigate();
@@ -115,6 +118,36 @@ export default function Test() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [testStarted, forceExit]);
+
+  // Assessment Timers Logic
+  useEffect(() => {
+    if (!testStarted || forceExit || testBlocked) return;
+
+    const interval = setInterval(() => {
+      setQuestionTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setTotalTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [testStarted, forceExit, testBlocked]);
+
+  useEffect(() => {
+    if (testStarted && questionTimeLeft === 0 && !testBlocked && !forceExit) {
+      handleNext();
+    }
+  }, [questionTimeLeft]);
+
+  useEffect(() => {
+    if (testStarted && totalTimeLeft === 0 && !testBlocked && !forceExit) {
+      handleNext(); // Finish assessment
+    }
+  }, [totalTimeLeft]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   // Check if user already took test
   useEffect(() => {
@@ -242,6 +275,7 @@ export default function Test() {
       return;
     }
     setQuestion(q0 => ({ ...q0, number: q0.number + 1 }));
+    setQuestionTimeLeft(60);
     await loadQuestion();
   };
 
@@ -485,21 +519,27 @@ export default function Test() {
 
   return (
     <Box maxW="700px" mx="auto" mt={20}>
-      <HStack justify="space-between" mb={4}>
+      <HStack justify="space-between" mb={4} p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">
         <VStack align="start" spacing={0}>
-          <Text fontSize="sm" color="gray.400">QUESTION</Text>
+          <Text fontSize="xs" color="gray.400" textTransform="uppercase">Question</Text>
           <Heading size="md" color="white">{question.number}/{question.total}</Heading>
         </VStack>
         <VStack align="center" spacing={0}>
-           <Text fontSize="sm" color="gray.400">TIME LEFT</Text>
-           <Text fontWeight="bold" color="cyan.300" fontSize="2xl" fontFamily="mono">
-            00:{question.time.toString().padStart(2, '0')}
+           <Text fontSize="xs" color="gray.400" textTransform="uppercase">Question Timer</Text>
+           <Text fontWeight="bold" color={questionTimeLeft < 10 ? "red.400" : "cyan.300"} fontSize="2xl" fontFamily="mono">
+            {formatTime(questionTimeLeft)}
+          </Text>
+        </VStack>
+        <VStack align="center" spacing={0}>
+           <Text fontSize="xs" color="gray.400" textTransform="uppercase">Total Time Remaining</Text>
+           <Text fontWeight="bold" color="purple.300" fontSize="2xl" fontFamily="mono">
+            {formatTime(totalTimeLeft)}
           </Text>
         </VStack>
         <VStack align="end" spacing={0}>
-          <Text fontSize="sm" color="gray.400">WARNINGS</Text>
+          <Text fontSize="xs" color="gray.400" textTransform="uppercase">Warnings</Text>
           <Text fontWeight="bold" color={question.switches > 2 ? "red.400" : "white"}>
-            {question.switches}/{question.maxSwitches} Switches
+            {question.switches}/{question.maxSwitches}
           </Text>
         </VStack>
       </HStack>
@@ -510,6 +550,32 @@ export default function Test() {
           {qLoading ? "AI is generating your question..." : question.text}
         </Heading>
         {!qLoading && <Tag colorScheme="cyan" mt={2} variant="subtle">{question.category}</Tag>}
+      </Box>
+
+      <Box mb={6}>
+        <HStack justify="space-between" mb={2}>
+          <Text fontSize="sm" fontWeight="bold" color="gray.400" textTransform="uppercase">Select Answering Language</Text>
+          <Tag colorScheme="purple" variant="subtle" size="sm">{selectedLanguage}</Tag>
+        </HStack>
+        <Select 
+          size="sm"
+          value={selectedLanguage} 
+          onChange={e => {
+            setSelectedLanguage(e.target.value);
+            localStorage.setItem("selectedLanguage", e.target.value);
+          }}
+          bg="rgba(15,18,24,0.8)"
+          borderColor="rgba(255,255,255,0.1)"
+          borderRadius="lg"
+          _hover={{ borderColor: "cyan.400" }}
+        >
+          <option value="English">English</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+        </Select>
       </Box>
 
       <Tabs variant="solid-rounded" colorScheme="cyan" mb={4}>
@@ -597,10 +663,18 @@ export default function Test() {
               </AlertDescription>
             </Box>
           </Alert>
-          <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end" size="lg" px={10} borderRadius="full">
-            {question.number === question.total ? "Finish Assessment" : "Move to Next Question"}
+          <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end" size="lg" px={10} borderRadius="full" boxShadow="0 0 20px rgba(0, 255, 255, 0.2)">
+            {question.number === question.total ? "Submit Final Assessment" : "Move to Next Question"}
           </Button>
         </VStack>
+      )}
+
+      {!evalResult && !qLoading && (
+        <HStack justify="flex-end" mt={4}>
+          <Button variant="ghost" color="gray.400" size="sm" onClick={handleNext} _hover={{ color: "white", bg: "rgba(255,255,255,0.05)" }}>
+            Skip to {question.number === question.total ? "Finish" : "Next"}
+          </Button>
+        </HStack>
       )}
     </Box>
   );
