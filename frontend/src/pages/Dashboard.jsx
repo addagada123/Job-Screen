@@ -217,7 +217,9 @@ export default function Dashboard({ hideSidebar }) {
     );
   }
 
-  const isAdminRoute = location.pathname.includes("admin-scores") || location.pathname.includes("admin-requests");
+  const isAdminRoute = location.pathname.includes("admin-scores") || 
+                       location.pathname.includes("admin-requests") || 
+                       location.pathname.includes("admin-users");
   if (isAdminRoute && !user.isAdmin) {
     return (
       <Flex minH="100vh" align="center" justify="center">

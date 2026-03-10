@@ -1,7 +1,6 @@
 // AI evaluation and question generation endpoint for JobScreen
 const express = require('express');
 const router = express.Router();
-const { Configuration, OpenAIApi } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fetch = require('node-fetch');
 
