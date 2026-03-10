@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "deepseek": "^0.0.2",
-    "openai": "^6.27.0"
-  }
-}
