@@ -1,6 +1,6 @@
 // Question generation utility: tries AI, falls back to static
 // Set VITE_API_BASE to your backend URL (e.g. "/api" or "http://localhost:3000")
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
 export const staticQuestions = [
   {

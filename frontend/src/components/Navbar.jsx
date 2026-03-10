@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const MotionFlex = motion(Flex);
+const MotionFlex = motion.create(Flex);
 
 export default function Navbar() {
   const [user, setUser] = useState(null);

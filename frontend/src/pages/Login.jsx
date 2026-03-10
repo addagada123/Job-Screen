@@ -1,5 +1,5 @@
-
-import { Box, Text, Link, useToast } from "@chakra-ui/react";
+import { Box, Text, Link as ChakraLink, useToast } from "@chakra-ui/react";
+import { Link } from "react-router-dom";
 import AuthForm from "../components/AuthForm";
 // import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useNavigate } from "react-router-dom";
@@ -53,10 +53,9 @@ export default function Login() {
       <Box position="relative" zIndex={1}>
         <AuthForm type="login" onSubmit={handleLogin} />
         <Text mt={4} textAlign="center" color="gray.400">
-          No account? <Link color="#6366f1" href="/signup">Sign up</Link>
+          No account? <ChakraLink as={Link} color="#6366f1" to="/signup">Sign up</ChakraLink>
         </Text>
       </Box>
     </Box>
   );
 }
-

@@ -1,7 +1,7 @@
 // API utility for JobScreen frontend
-// Set VITE_API_BASE to your backend URL in Vercel environment variables
+// Set VITE_API_BASE to your backend URL in environment variables
 // For production: https://job-screen-backend.onrender.com
-const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen-backend.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
 // Login
 export async function login(email, password) {
@@ -61,9 +61,9 @@ export async function updateUserScore(email, score) {
   return res.json();
 }
 
-// Upload resume
+// Upload resume (multipart — handled directly in Resume.jsx; this is the JSON variant)
 export async function uploadResume(email, resumeText) {
-  const res = await fetch(`${API_BASE}/api/upload-resume`, {
+  const res = await fetch(`${API_BASE}/upload-resume`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, resumeText })
@@ -79,40 +79,7 @@ export async function getResume(email) {
   return res.json();
 }
 
-// Ask OpenAI
-export async function askOpenAI(prompt) {
-  const res = await fetch(`${API_BASE}/api/openai`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  if (!res.ok) throw new Error("OpenAI API error");
-  return res.json();
-}
-
-// Ask Gemini
-export async function askGemini(prompt) {
-  const res = await fetch(`${API_BASE}/api/gemini`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  if (!res.ok) throw new Error("Gemini API error");
-  return res.json();
-}
-
-// Ask DeepSeek
-export async function askDeepSeek(prompt) {
-  const res = await fetch(`${API_BASE}/api/deepseek`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  if (!res.ok) throw new Error("DeepSeek API error");
-  return res.json();
-}
-
-// Evaluate answer
+// Evaluate answer (question generation + evaluation unified endpoint)
 export async function evaluateAnswer(prompt, model, language = "English") {
   const res = await fetch(`${API_BASE}/api/evaluate`, {
     method: "POST",
@@ -132,9 +99,5 @@ export default {
   updateUserScore,
   uploadResume,
   getResume,
-  askOpenAI,
-  askGemini,
-  askDeepSeek,
   evaluateAnswer
 };
-

@@ -62,16 +62,16 @@ export default function AdminScores() {
               <Tr key={i}>
                 <Td>{i + 1}</Td>
                 <Td>
-                  {s.user?.email ? (
-                    <Link href={`mailto:${s.user.email}`} color="cyan.300" _hover={{ textDecoration: "underline" }}>
-                      {s.user?.name || s.user.email}
+                  {s.email ? (
+                    <Link href={`mailto:${s.email}`} color="cyan.300" _hover={{ textDecoration: "underline" }}>
+                      {s.name || s.email}
                     </Link>
-                  ) : (s.user?.name || "-")}
+                  ) : (s.name || "-")}
                 </Td>
                 <Td>
-                  {s.user?.email ? (
-                    <Link href={`mailto:${s.user.email}`} color="cyan.300" _hover={{ textDecoration: "underline" }}>
-                      {s.user.email}
+                  {s.email ? (
+                    <Link href={`mailto:${s.email}`} color="cyan.300" _hover={{ textDecoration: "underline" }}>
+                      {s.email}
                     </Link>
                   ) : "-"}
                 </Td>
@@ -81,8 +81,8 @@ export default function AdminScores() {
                 <Td>{new Date(s.date).toLocaleString()}</Td>
                 <Td>
                   <HStack>
-                    <Button size="xs" colorScheme="green" variant={s.selection === "selected" ? "solid" : "outline"} isLoading={selecting === (s.user?.email + "selected")} onClick={() => handleSelect(s.user?.email, "selected")}>Select</Button>
-                    <Button size="xs" colorScheme="red" variant={s.selection === "rejected" ? "solid" : "outline"} isLoading={selecting === (s.user?.email + "rejected")} onClick={() => handleSelect(s.user?.email, "rejected")}>Reject</Button>
+                    <Button size="xs" colorScheme="green" variant={s.selection === "selected" ? "solid" : "outline"} isLoading={selecting === (s.email + "selected")} onClick={() => handleSelect(s.email, "selected")}>Select</Button>
+                    <Button size="xs" colorScheme="red" variant={s.selection === "rejected" ? "solid" : "outline"} isLoading={selecting === (s.email + "rejected")} onClick={() => handleSelect(s.email, "rejected")}>Reject</Button>
                     {s.selection && (
                       <Tag colorScheme={s.selection === "selected" ? "green" : "red"}>{s.selection === "selected" ? "Selected" : "Rejected"}</Tag>
                     )}

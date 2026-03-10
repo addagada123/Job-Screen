@@ -1,15 +1,11 @@
-
-
-
 import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { evaluateAnswer, updateUserScore } from "../../api";
 import { generateQuestion } from "../../api.question";
 import { FaMicrophone, FaStop } from "react-icons/fa";
-
-
-
 import { useNavigate } from "react-router-dom";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
 export default function Test() {
   const [answer, setAnswer] = useState("");
@@ -114,24 +110,26 @@ export default function Test() {
 
   async function loadQuestion() {
     setQLoading(true);
-      <Box
-        p={6}
-        borderRadius="2xl"
-        bg="rgba(255, 255, 255, 0.02)"
-        border="1px solid rgba(255, 255, 255, 0.05)"
-        mb={6}
-      >
-        <Text color="blue.400" fontWeight="bold" mb={1}>
-          Note: All questions are always in English.
-        </Text>
-        <Text color="gray.400" mb={2}>
-          Question {question.number} of {question.total}
-        </Text>
-        <Text fontWeight="600" fontSize="xl" mb={4}>
-          {qLoading ? "Loading..." : question.text}
-        </Text>
-        <Tag colorScheme="purple" mb={2}>{question.category}</Tag>
-      </Box>
+    setEvalResult(null);
+    setAnswer("");
+    setVoiceAnswer("");
+    try {
+      const { skills } = getSkillsAndLanguage();
+      const q = await generateQuestion(aiModel, skills, selectedLanguage);
+      setQuestion(prev => ({
+        ...prev,
+        text: q.text || "No question available.",
+        category: q.category || "General"
+      }));
+    } catch (err) {
+      setQuestion(prev => ({
+        ...prev,
+        text: "Could not load question. Please check your connection.",
+        category: "Error"
+      }));
+    } finally {
+      setQLoading(false);
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -148,7 +146,7 @@ export default function Test() {
       // Mark test as taken after first submit and update score in DB only if correct
       const user = JSON.parse(localStorage.getItem("user"));
       if (user && !user.testTaken && isCorrect) {
-        await fetch(`${import.meta.env.VITE_API_BASE}/api/mark-test-taken`, {
+        await fetch(`${API_BASE}/api/mark-test-taken`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email })
@@ -274,7 +272,7 @@ export default function Test() {
       // Mark test as taken after first submit and update score in DB only if correct
       const user = JSON.parse(localStorage.getItem("user"));
       if (user && !user.testTaken && isCorrect) {
-        await fetch(`${import.meta.env.VITE_API_BASE}/api/mark-test-taken`, {
+        await fetch(`${API_BASE}/api/mark-test-taken`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email })
