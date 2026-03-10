@@ -4,6 +4,11 @@
 	const dotenv = require('dotenv');
 	const { OAuth2Client } = require('google-auth-library');
 	const { MongoClient, ObjectId } = require('mongodb');
+	const multer = require('multer');
+	const parseResume = require('./resumeParser');
+	const extractSkills = require('./skillExtract');
+	// const { openai } = require('./ai'); // Uncomment and configure for AI job matching
+	const upload = multer();
 	dotenv.config();
 
 	const app = express();
@@ -12,10 +17,7 @@
 	// CORS configuration - allow Vercel frontend and localhost
 	const corsOptions = {
 		origin: [
-			'https://job-screen-pv2jw2zca-addagada123s-projects.vercel.app',
-			'https://job-screen-98f5bh6wz-addagada123s-projects.vercel.app',
-			'http://localhost:5173',
-			'http://localhost:3000'
+			'https://job-screen-frontend.onrender.com'
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -211,23 +213,32 @@
 		}
 	});
 
-	// Upload resume endpoint
-	app.post('/api/upload-resume', async (req, res) => {
-		const { email, resumeText } = req.body;
-		if (!email || !resumeText) {
-			return res.status(400).json({ error: 'Missing email or resume text' });
-		}
+
+	// New upload-resume endpoint (file upload)
+	app.post('/upload-resume', upload.single('resume'), async (req, res) => {
 		try {
-			const result = await usersCollection.updateOne(
-				{ email },
-				{ $set: { resume: resumeText } }
-			);
-			if (result.matchedCount === 0) {
-				return res.status(404).json({ error: 'User not found' });
+			if (!req.file) {
+				return res.status(400).json({ error: 'No file uploaded' });
 			}
-			res.json({ success: true });
+			const text = await parseResume(req.file);
+			// Skill extraction
+			const skills = extractSkills(text);
+			// AI job matching placeholder (uncomment and implement as needed)
+			// const response = await openai.chat.completions.create({
+			//   model: "gpt-4o-mini",
+			//   messages: [
+			//     { role: "user", content: `Extract job type and experience from this resume:\n${text}` }
+			//   ]
+			// });
+			// const aiResult = response.choices[0].message.content;
+			res.json({
+				success: true,
+				resumeText: text,
+				skills,
+				// aiResult
+			});
 		} catch (err) {
-			res.status(500).json({ error: 'Failed to upload resume', details: err.message });
+			res.status(500).json({ error: err.message });
 		}
 	});
 

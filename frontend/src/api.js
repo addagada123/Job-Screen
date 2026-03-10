@@ -1,7 +1,7 @@
 // API utility for JobScreen frontend
 // Set VITE_API_BASE to your backend URL in Vercel environment variables
-// For production: https://your-backend.onrender.com
-const API_BASE = import.meta.env.VITE_API_BASE || "https://your-backend.onrender.com";
+// For production: https://job-screen-backend.onrender.com
+const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen-backend.onrender.com";
 
 // Login
 export async function login(email, password) {
