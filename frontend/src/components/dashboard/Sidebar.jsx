@@ -171,9 +171,13 @@ export default function Sidebar({ user }) {
             Menu
           </Text>
           <NavItem to="/dashboard/overview">📊 Overview</NavItem>
-          <NavItem to="/dashboard/resume">📄 Resume</NavItem>
-          <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
-          <NavItem to="/dashboard/results">📈 Results</NavItem>
+          {!user?.isAdmin && (
+            <>
+              <NavItem to="/dashboard/resume">📄 Resume</NavItem>
+              <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
+              <NavItem to="/dashboard/results">📈 Results</NavItem>
+            </>
+          )}
 
           {user?.isAdmin && (
             <>

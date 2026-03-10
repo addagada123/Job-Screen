@@ -7,7 +7,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import { getAllScores, selectCandidate } from "../../api";
 
-export default function AdminScores() {
+export default function AdminScores({ embedMode = false }) {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,10 +108,22 @@ export default function AdminScores() {
   );
 
   return (
-    <Box maxW="1000px" mx="auto" mt={8} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" p={8} boxShadow="2xl" border="1px solid rgba(255,255,255,0.05)">
-      <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
-        Talent Acquisition Dashboard
-      </Heading>
+    <Box 
+      maxW={embedMode ? "100%" : "1000px"} 
+      mx="auto" 
+      mt={embedMode ? 0 : 8} 
+      bg={embedMode ? "transparent" : "rgba(20,25,35,0.8)"} 
+      backdropFilter={embedMode ? "none" : "blur(10px)"} 
+      borderRadius="2xl" 
+      p={embedMode ? 0 : 8} 
+      boxShadow={embedMode ? "none" : "2xl"} 
+      border={embedMode ? "none" : "1px solid rgba(255,255,255,0.05)"}
+    >
+      {!embedMode && (
+        <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
+          Talent Acquisition Dashboard
+        </Heading>
+      )}
       
       {loading ? (
         <Flex justify="center" p={10}><Spinner size="xl" color="cyan.400" /></Flex>

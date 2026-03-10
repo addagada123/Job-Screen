@@ -15,7 +15,10 @@ import { motion } from "framer-motion";
 const MotionBox = motion(Box);
 
 function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
-  // Ensure margin-top for navbar offset
+  if (user?.isAdmin) {
+    return <Overview user={user} resumeUploaded={resumeUploaded} testTaken={testTaken} />;
+  }
+
   return (
     <Box mt={20} maxW="600px" mx="auto" p={6} borderRadius="2xl" bg="rgba(255,255,255,0.02)" border="1px solid rgba(255,255,255,0.05)">
       <VStack spacing={6} align="stretch">
@@ -73,11 +76,18 @@ function Overview({ user, resumeUploaded, testTaken }) {
   }, [user]);
 
   if (user?.isAdmin) {
+    const navigate = useNavigate();
     return (
       <VStack spacing={8} align="stretch" p={8}>
-        <Heading size="lg" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
-          Admin Command Center
-        </Heading>
+        <HStack justify="space-between">
+          <Heading size="lg" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
+            Recruiter Command Center
+          </Heading>
+          <HStack spacing={4}>
+             <Button size="sm" colorScheme="cyan" variant="outline" onClick={() => navigate("/dashboard/admin-scores")}>Rankings</Button>
+             <Button size="sm" colorScheme="purple" variant="outline" onClick={() => navigate("/dashboard/admin-requests")}>Requests</Button>
+          </HStack>
+        </HStack>
         
         {loading ? <Spinner /> : (
           <Wrap spacing={6} justify="start">
@@ -88,6 +98,11 @@ function Overview({ user, resumeUploaded, testTaken }) {
             <StatCard label="Access Requests" value={stats.requests} icon="🔑" color="purple.400" />
           </Wrap>
         )}
+
+        <Box>
+           <Heading size="md" mb={4} color="white">Top Ranking Candidates</Heading>
+           <AdminScores embedMode={true} />
+        </Box>
 
         <Box bg="rgba(255,255,255,0.02)" p={6} borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)">
           <Heading size="sm" mb={4}>Quick Tips</Heading>
