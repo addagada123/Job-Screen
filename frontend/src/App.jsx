@@ -10,8 +10,10 @@ function App() {
   const location = useLocation();
   const hideNavbar = location.pathname.startsWith("/dashboard/test");
 
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "406943845792-eiubf40t6lth2sk5fbtbllfia9buj26c.apps.googleusercontent.com";
+
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       {!hideNavbar && <Navbar />}
 
       <Routes>
