@@ -5,6 +5,7 @@
 	const { OAuth2Client } = require('google-auth-library');
 	const { MongoClient, ObjectId } = require('mongodb');
 	const multer = require('multer');
+	const path = require('path');
 	const parseResume = require('./resumeParser');
 	const extractSkills = require('./skillExtract');
 	// const { openai } = require('./ai'); // Uncomment and configure for AI job matching
@@ -425,6 +426,15 @@
 	// Mount AI router
 	const aiRouter = require('./ai');
 	app.use('/api', aiRouter);
+
+	// Serve static files from the frontend/dist directory
+	// Path is ../frontend/dist relative to backend/server.js
+	app.use(express.static(path.join(__dirname, '../frontend/dist')));
+	
+	// Support React Client-Side Routing: fallback to index.html
+	app.get('*', (req, res) => {
+		res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+	});
 
 	// Start server
 	const PORT = process.env.PORT || 5000;
