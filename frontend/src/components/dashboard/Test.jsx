@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon } from "@chakra-ui/react";
+import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon, Spinner } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { evaluateAnswer, updateUserScore, markTestTaken } from "../../api";
 import { generateQuestion } from "../../api.question";
@@ -448,21 +448,35 @@ export default function Test() {
               <AlertIcon />
               Clicking "Start Assessment" will request Camera and Microphone permissions.
             </Alert>
-            <Button 
-              colorScheme="cyan" 
-              size="lg" 
-              w="full" 
-              h="16" 
-              fontSize="xl"
-              onClick={handleStartTest}
-              isLoading={loading}
-              leftIcon={<Icon as={FaCamera} />}
-              bgGradient="linear(to-r, cyan.500, blue.500)"
-              _hover={{ bgGradient: "linear(to-r, cyan.400, blue.400)", transform: "translateY(-2px)" }}
-              transition="all 0.3s"
-            >
-              Start Assessment Now
-            </Button>
+            <HStack spacing={4} w="full">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                flex={1} 
+                h="16"
+                onClick={() => navigate("/dashboard")}
+                borderColor="rgba(255,255,255,0.2)"
+                _hover={{ bg: "rgba(255,255,255,0.05)" }}
+              >
+                Back
+              </Button>
+              <Button 
+                colorScheme="cyan" 
+                size="lg" 
+                flex={2} 
+                h="16" 
+                fontSize="xl"
+                onClick={handleStartTest}
+                isLoading={loading}
+                leftIcon={<Icon as={FaCamera} />}
+                bgGradient="linear(to-r, cyan.500, blue.500)"
+                _hover={{ bgGradient: "linear(to-r, cyan.400, blue.400)", transform: "translateY(-2px)" }}
+                transition="all 0.3s"
+                boxShadow="0 4px 20px rgba(0, 255, 255, 0.3)"
+              >
+                Start Assessment Now
+              </Button>
+            </HStack>
           </Box>
         </VStack>
       </Box>
