@@ -75,7 +75,7 @@ export default function AuthForm({ type = "login", onSubmit }) {
           </Heading>
           <Text color="gray.500" fontSize="sm" textAlign="center">
             {type === "login"
-              ? "Sign in to continue your journey"
+              ? "Sign In to continue your journey"
               : "Start your journey with us today"}
           </Text>
         </VStack>

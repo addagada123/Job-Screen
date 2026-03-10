@@ -10,7 +10,10 @@ export async function login(email, password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  if (!res.ok) throw new Error("Login failed");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Sign in failed");
+  }
   return res.json();
 }
 
@@ -21,7 +24,10 @@ export async function signup(name, email, password, requestAdmin = false) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password, requestAdmin })
   });
-  if (!res.ok) throw new Error("Signup failed");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Signup failed");
+  }
   return res.json();
 }
 

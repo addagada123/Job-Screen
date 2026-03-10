@@ -10,12 +10,13 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+
 // --- Helper: OpenAI ---
 async function askOpenAI(prompt, language = "English") {
-  const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
-  const openai = new OpenAIApi(configuration);
   const systemPrompt = `You are an expert interviewer. All responses must be in ${language}.`;
-  const res = await openai.createChatCompletion({
+  const response = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
       { role: "system", content: systemPrompt },
@@ -24,7 +25,7 @@ async function askOpenAI(prompt, language = "English") {
     temperature: 0.7,
     max_tokens: 256
   });
-  return res.data.choices[0].message.content;
+  return response.choices[0].message.content;
 }
 
 // --- Helper: Gemini ---

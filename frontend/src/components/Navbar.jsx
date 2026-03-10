@@ -96,7 +96,7 @@ export default function Navbar() {
             onClick={handleLogout}
             transition="all 0.3s ease"
           >
-            Logout
+            Sign Out
           </Button>
         ) : (
           <>
@@ -116,7 +116,7 @@ export default function Navbar() {
               }}
               transition="all 0.3s ease"
             >
-              Login
+              Sign In
             </Button>
             <Button
               as={Link}

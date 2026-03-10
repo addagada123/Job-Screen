@@ -28,10 +28,10 @@ export default function Signup() {
         navigate("/login");
       }
     } catch (err) {
-      if (err.message && err.message.includes('User already exists')) {
-        toast({ title: "Signup failed", description: "An account with this email already exists.", status: "error" });
+      if (err.message && err.message.includes('already exists')) {
+        toast({ title: "Account already exists", description: "You already have an account with this email. Please Sign In.", status: "warning" });
       } else {
-        toast({ title: "Signup failed", description: err.message, status: "error" });
+        toast({ title: "Signup failed", description: err.message || "Something went wrong", status: "error" });
       }
     }
   };
@@ -66,7 +66,7 @@ export default function Signup() {
         <AuthForm type="signup" onSubmit={handleSignup} />
         {waitMsg && <Text mt={4} textAlign="center" color="yellow.300">{waitMsg}</Text>}
         <Text mt={4} textAlign="center" color="gray.400">
-          Already have an account? <ChakraLink as={Link} color="#6366f1" to="/login">Login</ChakraLink>
+          Already have an account? <ChakraLink as={Link} color="#6366f1" to="/login">Sign In</ChakraLink>
         </Text>
       </Box>
     </Box>

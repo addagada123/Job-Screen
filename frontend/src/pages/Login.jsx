@@ -17,10 +17,10 @@ export default function Login() {
     try {
       const user = await login(email, password);
       localStorage.setItem("user", JSON.stringify(user));
-      toast({ title: "Login successful!", status: "success" });
+      toast({ title: "Sign in successful!", status: "success" });
       navigate("/dashboard");
     } catch (err) {
-      toast({ title: "Login failed", description: err.message, status: "error" });
+      toast({ title: "Sign in failed", description: err.message, status: "error" });
     }
   };
 

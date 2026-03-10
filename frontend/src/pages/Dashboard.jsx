@@ -286,18 +286,7 @@ export default function Dashboard({ hideSidebar }) {
               resumeUploaded={resumeUploaded}
               testTaken={testTaken}
               onUploadResume={() => navigate("/dashboard/resume")}
-              onTakeTest={() => {
-                if (!resumeUploaded) {
-                  toast({ title: "Please upload your resume first.", status: "warning" });
-                  return;
-                }
-                if (testTaken) {
-                  toast({ title: "One test at a time! You have already submitted your test.", status: "info" });
-                  return;
-                }
-                setPendingTest(true);
-                onOpen();
-              }}
+              onTakeTest={() => navigate("/dashboard/test")}
               onViewResults={() => navigate("/dashboard/results")}
             />
           } />
@@ -310,32 +299,6 @@ export default function Dashboard({ hideSidebar }) {
           <Route path="admin-users" element={<AdminUsers />} />
         </Routes>
         <Outlet />
-
-        {/* Modal for test confirmation */}
-        <Modal isOpen={isOpen} onClose={() => { setPendingTest(false); onClose(); }} isCentered>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Take Test</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              Are you sure you want to take the test now? You can only take it once. Microphone permission will be requested.
-            </ModalBody>
-            <ModalFooter>
-              <Button onClick={() => { setPendingTest(false); onClose(); }} mr={3} variant="ghost">Cancel</Button>
-              <Button colorScheme="green" onClick={async () => {
-                try {
-                  await navigator.mediaDevices.getUserMedia({ audio: true });
-                  onClose();
-                  navigate("/dashboard/test");
-                } catch {
-                  toast({ title: "Microphone permission denied.", status: "error" });
-                  onClose();
-                }
-                setPendingTest(false);
-              }}>Start Test</Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
       </Box>
     </Flex>
   );
