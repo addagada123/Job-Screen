@@ -1,0 +1,59 @@
+﻿
+> frontend@0.0.0 build
+> vite build && cp public/_redirects dist/
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 1231 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  1.42 kB[22m[1m[22m[2m Γöé gzip:   0.63 kB[22m
+[2mdist/[22m[35massets/index-BPTbZRJp.css  [39m[1m[2m  4.42 kB[22m[1m[22m[2m Γöé gzip:   1.56 kB[22m
+[2mdist/[22m[36massets/index-CDbJ1ZDj.js   [39m[1m[33m706.46 kB[39m[22m[2m Γöé gzip: 223.53 kB[22m
+node.exe : [33m
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" "C:\U
+sers\addag\AppData\Roa
+ming\ ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : 
+NotSpecified: (    
+[33m:String) [], Remo 
+   teException
+    + 
+FullyQualifiedError   
+ Id : 
+NativeCommandErr    or
+ 
+(!) Some chunks are 
+larger than 500 kB 
+after minification. 
+Consider:
+- Using dynamic 
+import() to 
+code-split the 
+application
+- Use build.rollupOpti
+ons.output.manualChunk
+s to improve 
+chunking: https://roll
+upjs.org/configuration
+-options/#output-manua
+lchunks
+- Adjust chunk size 
+limit for this 
+warning via build.chun
+kSizeWarningLimit.[39
+m
+[32mΓ£ô built in 7.39s[39m
+'cp' is not 
+recognized as an 
+internal or external 
+command,
+operable program or 
+batch file.

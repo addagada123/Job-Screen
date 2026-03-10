@@ -1,0 +1,115 @@
+﻿
+> frontend@0.0.0 build
+> vite build && cp public/_redirects dist/
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 589 modules transformed.
+node.exe : 
+[31mΓ£ù[39m Build 
+failed in 1.65s
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" "C:\U
+sers\addag\AppData\Roa
+ming\ ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ([31mΓ£ù[   
+ 39m Build failed     
+in 1.65s:String)     
+[], RemoteExcepti    
+on
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+[31merror during 
+build:
+[31m[vite]: Rollup 
+failed to resolve 
+import 
+"@chakra-ui/icons" 
+from "C:/Users/addag/D
+ownloads/Job Screen/fr
+ontend/src/components/
+dashboard/AdminScores.
+jsx".
+This is most likely 
+unintended because it 
+can break your 
+application at 
+runtime.
+If you do want to 
+externalize this 
+module explicitly add 
+it to
+`build.rollupOptions.e
+xternal`[31m
+    at viteLog (file:/
+//C:/Users/addag/Downl
+oads/Job%20Screen/fron
+tend/node_modules/vite
+/dist/node/chunks/conf
+ig.js:33635:57)
+    at file:///C:/User
+s/addag/Downloads/Job%
+20Screen/frontend/node
+_modules/vite/dist/nod
+e/chunks/config.js:336
+69:73
+    at onwarn (file://
+/C:/Users/addag/Downlo
+ads/Job%20Screen/front
+end/node_modules/@vite
+js/plugin-react/dist/i
+ndex.js:76:7)
+    at file:///C:/User
+s/addag/Downloads/Job%
+20Screen/frontend/node
+_modules/vite/dist/nod
+e/chunks/config.js:336
+69:28
+    at onRollupLog (fi
+le:///C:/Users/addag/D
+ownloads/Job%20Screen/
+frontend/node_modules/
+vite/dist/node/chunks/
+config.js:33664:63)
+    at onLog (file:///
+C:/Users/addag/Downloa
+ds/Job%20Screen/fronte
+nd/node_modules/vite/d
+ist/node/chunks/config
+.js:33467:4)
+    at file:///C:/User
+s/addag/Downloads/Job%
+20Screen/frontend/node
+_modules/rollup/dist/e
+s/shared/node-entry.js
+:20981:32
+    at Object.logger 
+[as onLog] (file:///C:
+/Users/addag/Downloads
+/Job%20Screen/frontend
+/node_modules/rollup/d
+ist/es/shared/node-ent
+ry.js:22968:9)
+    at ModuleLoader.ha
+ndleInvalidResolvedId 
+(file:///C:/Users/adda
+g/Downloads/Job%20Scre
+en/frontend/node_modul
+es/rollup/dist/es/shar
+ed/node-entry.js:21712
+:26)
+    at file:///C:/User
+s/addag/Downloads/Job%
+20Screen/frontend/node
+_modules/rollup/dist/e
+s/shared/node-entry.js
+:21670:26[39m
