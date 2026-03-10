@@ -14,10 +14,13 @@
 	const app = express();
 
 
-	// CORS configuration - allow Vercel frontend and localhost
+	// CORS configuration - allow frontend and localhost
 	const corsOptions = {
 		origin: [
-			'https://job-screen-frontend.onrender.com'
+			'https://job-screen-frontend.onrender.com',
+			'http://localhost:5173',
+			'http://localhost:3300',
+			'http://localhost:3000'
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -203,13 +206,90 @@
 		}
 	});
 
-	// Get all scores (admin)
+	// Get all scores (admin) — join with usersCollection for name + selection
 	app.get('/api/scores', async (req, res) => {
 		try {
 			const scores = await scoresCollection.find({}).toArray();
-			res.json(scores);
+			// Enrich each score record with user name and selection
+			const enriched = await Promise.all(scores.map(async (s) => {
+				const user = await usersCollection.findOne({ email: s.email });
+				return {
+					...s,
+					name: user ? user.name : null,
+					selection: user ? user.selection : null
+				};
+			}));
+			res.json(enriched);
 		} catch (err) {
 			res.status(500).json({ error: 'Failed to fetch scores', details: err.message });
+		}
+	});
+
+	// Mark test as taken
+	app.post('/api/mark-test-taken', async (req, res) => {
+		const { email } = req.body;
+		if (!email) return res.status(400).json({ error: 'Missing email' });
+		try {
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { testTaken: true } }
+			);
+			if (result.matchedCount === 0) return res.status(404).json({ error: 'User not found' });
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to mark test taken', details: err.message });
+		}
+	});
+
+	// Get all users for admin (includes testTaken + selection)
+	app.get('/api/admin/users', async (req, res) => {
+		try {
+			const users = await usersCollection.find({}).toArray();
+			res.json(users.map(u => ({
+				id: u._id.toString(),
+				email: u.email,
+				name: u.name,
+				role: u.role,
+				score: u.score,
+				testTaken: u.testTaken || false,
+				selection: u.selection || null,
+				isAdmin: u.role === 'admin'
+			})));
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to fetch users', details: err.message });
+		}
+	});
+
+	// Get pending admin requests
+	app.get('/api/admin/requests', async (req, res) => {
+		try {
+			const requests = await usersCollection.find({ role: 'pending_admin' }).toArray();
+			res.json(requests.map(u => ({
+				id: u._id.toString(),
+				email: u.email,
+				name: u.name
+			})));
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to fetch requests', details: err.message });
+		}
+	});
+
+	// Approve or reject admin request
+	app.post('/api/admin/approve', async (req, res) => {
+		const { email, approve } = req.body;
+		if (!email || typeof approve !== 'boolean') {
+			return res.status(400).json({ error: 'Missing or invalid email/approve' });
+		}
+		try {
+			const newRole = approve ? 'admin' : 'candidate';
+			const result = await usersCollection.updateOne(
+				{ email },
+				{ $set: { role: newRole } }
+			);
+			if (result.matchedCount === 0) return res.status(404).json({ error: 'User not found' });
+			res.json({ success: true, role: newRole });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to update role', details: err.message });
 		}
 	});
 
