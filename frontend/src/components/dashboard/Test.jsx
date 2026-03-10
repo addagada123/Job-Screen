@@ -28,6 +28,7 @@ export default function Test() {
   const [qLoading, setQLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
   const [forceExit, setForceExit] = useState(false);
+  const [currentScore, setCurrentScore] = useState(0);
   const [adminNotification, setAdminNotification] = useState("");
   const toast = useToast();
   const tabSwitches = useRef(0);
@@ -50,6 +51,41 @@ export default function Test() {
     }
     // You can replace this with a real fetch to backend for admin messages/selection
   }, []);
+  
+  const handleSecurityViolation = async (reason) => {
+    setForceExit(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && !user.testTaken) {
+      try {
+        // Submit 0 score and mark as taken
+        await Promise.all([
+          markTestTaken(user.email),
+          updateUserScore(user.email, 0)
+        ]);
+        
+        toast({
+          title: "Security Violation",
+          description: `Test terminated: ${reason}. Score: 0/15. Logging out...`,
+          status: "error",
+          duration: 5000,
+          isClosable: true
+        });
+
+        // Delay logout slightly to show message
+        setTimeout(() => {
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }, 3000);
+      } catch (err) {
+        console.error("Failed to submit violation score", err);
+        // Fallback: still redirect
+        setTimeout(() => {
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }, 2000);
+      }
+    }
+  };
 
   // Fullscreen and tab switch enforcement
   useEffect(() => {
@@ -60,32 +96,30 @@ export default function Test() {
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     else if (el.msRequestFullscreen) el.msRequestFullscreen();
 
-    // Tab switch handler
-    const handleVisibility = () => {
+    const handleVisibilityChange = () => {
       if (document.hidden) {
         tabSwitches.current += 1;
         setQuestion(q => ({ ...q, switches: tabSwitches.current }));
-        if (tabSwitches.current >= 4) {
-          setForceExit(true);
-          toast({ title: "Test exited: Too many tab switches.", status: "error", duration: 4000 });
+        if (tabSwitches.current > 4) {
+          handleSecurityViolation("Too many tab switches");
         } else {
-          toast({ title: `Tab switch detected (${tabSwitches.current}/4)`, status: "warning", duration: 2000 });
+          toast({ title: `Tab switch detected (${tabSwitches.current}/4 allowed)`, status: "warning", duration: 3000 });
         }
       }
     };
-    // Fullscreen exit handler
-    const handleFullscreen = () => {
-      if (!document.fullscreenElement) {
-        setForceExit(true);
-        toast({ title: "Test exited: Fullscreen exited.", status: "error", duration: 4000 });
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && !forceExit) {
+        handleSecurityViolation("Exited fullscreen mode");
       }
     };
-    document.addEventListener("visibilitychange", handleVisibility);
-    document.addEventListener("fullscreenchange", handleFullscreen);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      document.removeEventListener("fullscreenchange", handleFullscreen);
-      if (document.exitFullscreen) document.exitFullscreen();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen();
     };
     // eslint-disable-next-line
   }, []);
@@ -96,6 +130,7 @@ export default function Test() {
     if (!user) return;
     if (user.testTaken === true) {
       setTestBlocked(true);
+      return;
     }
     loadQuestion();
     // eslint-disable-next-line
@@ -137,32 +172,15 @@ export default function Test() {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(answer, aiModel, language);
+      const result = await evaluateAnswer(answer, aiModel, language, question.text);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       // Enforce 70% context relevancy threshold
-      const relevancy = typeof result.relevancy === "number" ? result.relevancy : (typeof result.score === "number" ? result.score : 0);
+      const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
       const isCorrect = relevancy >= 70;
-      // Mark test as taken after first submit and update score in DB only if correct
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user && !user.testTaken && isCorrect) {
-        await fetch(`${API_BASE}/api/mark-test-taken`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email })
-        });
-        // Update score in MongoDB
-        if (typeof result.score === "number") {
-          try {
-            await updateUserScore(user.email, result.score);
-            user.score = result.score;
-          } catch (err) {
-            toast({ title: "Failed to save score", status: "error" });
-          }
-        }
-        user.testTaken = true;
-        localStorage.setItem("user", JSON.stringify(user));
-        setTestBlocked(true);
+      
+      if (isCorrect) {
+        setCurrentScore(prev => prev + 1);
       }
     } catch (err) {
       toast({ title: "API Error", description: err.message, status: "error", duration: 3000, isClosable: true });
@@ -174,15 +192,34 @@ export default function Test() {
   const handleNext = async () => {
     // If last question, show completion toast
     if (question.number === question.total) {
-      toast({
-        title: "Test Completed!",
-        description: "You have finished all questions. Results will be reviewed by admin.",
-        status: "success",
-        duration: 4000,
-        isClosable: true
-      });
-      setTestBlocked(true);
-      // Optionally, trigger any post-test logic here
+      setLoading(true);
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user) {
+          // Finalize test in backend
+          await Promise.all([
+            markTestTaken(user.email),
+            updateUserScore(user.email, currentScore)
+          ]);
+          
+          user.testTaken = true;
+          user.score = currentScore;
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+
+        toast({
+          title: "Test Completed!",
+          description: `You have scored ${currentScore}/${question.total}. Results will be reviewed by admin.`,
+          status: "success",
+          duration: 4000,
+          isClosable: true
+        });
+        setTestBlocked(true);
+      } catch (err) {
+        toast({ title: "Error submitting test", status: "error" });
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     setQuestion(q0 => ({ ...q0, number: q0.number + 1 }));
@@ -239,8 +276,13 @@ export default function Test() {
       setVoiceAnswer(transcript);
       setIsRecording(false);
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
       setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        toast({ title: "Microphone Access Denied", description: "Please allow microphone access in your browser settings.", status: "error", duration: 5000, isClosable: true });
+      } else {
+        toast({ title: "Microphone Error", description: event.error, status: "error", duration: 3000, isClosable: true });
+      }
     };
     recognition.onend = () => {
       setIsRecording(false);
@@ -263,31 +305,15 @@ export default function Test() {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(voiceAnswer, aiModel, language);
+      const result = await evaluateAnswer(voiceAnswer, aiModel, language, question.text);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       // Enforce 70% context relevancy threshold
-      const relevancy = typeof result.relevancy === "number" ? result.relevancy : (typeof result.score === "number" ? result.score : 0);
+      const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
       const isCorrect = relevancy >= 70;
-      // Mark test as taken after first submit and update score in DB only if correct
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user && !user.testTaken && isCorrect) {
-        await fetch(`${API_BASE}/api/mark-test-taken`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email })
-        });
-        if (typeof result.score === "number") {
-          try {
-            await updateUserScore(user.email, result.score);
-            user.score = result.score;
-          } catch (err) {
-            toast({ title: "Failed to save score", status: "error" });
-          }
-        }
-        user.testTaken = true;
-        localStorage.setItem("user", JSON.stringify(user));
-        setTestBlocked(true);
+      
+      if (isCorrect) {
+        setCurrentScore(prev => prev + 1);
       }
     } catch (err) {
       toast({ title: "API Error", description: err.message, status: "error", duration: 3000, isClosable: true });
@@ -374,7 +400,7 @@ export default function Test() {
                   </Box>
                 </Alert>
                 <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end">
-                  Next Question
+                  {question.number === question.total ? "Submit Test" : "Next Question"}
                 </Button>
               </VStack>
             )}
@@ -424,7 +450,7 @@ export default function Test() {
                       </Box>
                     </Alert>
                     <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end">
-                      Next Question
+                      {question.number === question.total ? "Submit Test" : "Next Question"}
                     </Button>
                   </VStack>
                 )}

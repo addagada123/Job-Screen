@@ -1,4 +1,4 @@
-import { Box, Flex, Text, VStack, Button, useToast, Alert, AlertIcon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useDisclosure } from "@chakra-ui/react";
+import { Box, Flex, Text, VStack, Button, useToast, Alert, AlertIcon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useDisclosure, Heading, Spinner, Wrap, HStack } from "@chakra-ui/react";
 import Sidebar from "../components/dashboard/Sidebar";
 import Test from "../components/dashboard/Test";
 import Results from "../components/dashboard/Results";
@@ -8,6 +8,12 @@ import AdminRequests from "../components/dashboard/AdminRequests";
 import AdminUsers from "../components/dashboard/AdminUsers";
 import { Outlet, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { getCurrentUser } from "../utils/auth";
+import { getAdminUsers, getAdminRequests } from "../api";
+import { motion } from "framer-motion";
+
+const MotionBox = motion(Box);
+
 function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
   // Ensure margin-top for navbar offset
   return (
@@ -42,42 +48,126 @@ function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTake
     </Box>
   );
 }
-import { getCurrentUser } from "../utils/auth";
-import { motion } from "framer-motion";
+function Overview({ user, resumeUploaded, testTaken }) {
+  const [stats, setStats] = useState({ total: 0, pending: 0, selected: 0, rejected: 0, requests: 0 });
+  const [loading, setLoading] = useState(user?.isAdmin);
 
-const MotionBox = motion(Box);
+  useEffect(() => {
+    if (user?.isAdmin) {
+      // Fetch stats for admin
+      Promise.all([
+        getAdminUsers(),
+        getAdminRequests()
+      ]).then(([users, requests]) => {
+        const counts = {
+          total: users.length,
+          pending: users.filter(u => !u.selection && u.testTaken).length,
+          selected: users.filter(u => u.selection === "selected").length,
+          rejected: users.filter(u => u.selection === "rejected").length,
+          requests: requests.length
+        };
+        setStats(counts);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
+  }, [user]);
 
-function Overview() {
-  return (
-    <MotionBox
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      p={8}
-      mt={20}
-    >
-      <VStack spacing={6} align="stretch">
-        <Text
-          fontSize="3xl"
-          fontWeight="700"
-          bgGradient="linear(to-r, #6366f1, #8b5cf6)"
-          bgClip="text"
-        >
-          Welcome to your Dashboard!
-        </Text>
-        <Box
-          p={6}
-          borderRadius="2xl"
-          bg="rgba(255, 255, 255, 0.02)"
-          border="1px solid rgba(255, 255, 255, 0.05)"
-        >
-          <Text color="gray.400">
-            Your journey to getting hired starts here. Upload your resume, 
-            complete assessments, and track your progress all in one place.
-          </Text>
+  if (user?.isAdmin) {
+    return (
+      <VStack spacing={8} align="stretch" p={8}>
+        <Heading size="lg" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
+          Admin Command Center
+        </Heading>
+        
+        {loading ? <Spinner /> : (
+          <Wrap spacing={6} justify="start">
+            <StatCard label="Total Applicants" value={stats.total} icon="👥" color="blue.400" />
+            <StatCard label="Pending Review" value={stats.pending} icon="⏳" color="orange.400" />
+            <StatCard label="Selected" value={stats.selected} icon="✅" color="green.400" />
+            <StatCard label="Rejected" value={stats.rejected} icon="❌" color="red.400" />
+            <StatCard label="Access Requests" value={stats.requests} icon="🔑" color="purple.400" />
+          </Wrap>
+        )}
+
+        <Box bg="rgba(255,255,255,0.02)" p={6} borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)">
+          <Heading size="sm" mb={4}>Quick Tips</Heading>
+          <VStack align="start" spacing={2} color="gray.400" fontSize="sm">
+            <Text>• Review 'Admin Requests' to grant new recruiters access.</Text>
+            <Text>• Check 'Candidate Rankings' to evaluate test results and mark selections.</Text>
+            <Text>• High context relevancy ({">= 70%"}) indicates a strong candidate match.</Text>
+          </VStack>
         </Box>
       </VStack>
-    </MotionBox>
+    );
+  }
+
+  // User Overview
+  return (
+    <VStack spacing={10} align="stretch" p={8}>
+      <VStack align="start" spacing={2}>
+        <Heading size="xl">Hello, {user?.firstName || "Candidate"}! 👋</Heading>
+        <Text color="gray.400">Track your application progress below.</Text>
+      </VStack>
+
+      <Flex justify="space-between" position="relative" px={4}>
+        <StepIndicator active={true} label="Resume" done={resumeUploaded} />
+        <StepIndicator active={resumeUploaded} label="AI Test" done={testTaken} />
+        <StepIndicator active={testTaken} label="Result" done={false} />
+        <Box position="absolute" top="15px" left="10%" right="10%" h="2px" bg="rgba(255,255,255,0.1)" zIndex={0} />
+      </Flex>
+
+      <Box bg="rgba(255,255,255,0.02)" p={8} borderRadius="3xl" border="1px solid rgba(255,255,255,0.05)" boxShadow="xl">
+        {!resumeUploaded ? (
+          <VStack spacing={4}>
+            <Text fontSize="lg" fontWeight="600">Step 1: Upload your Resume</Text>
+            <Text color="gray.400" textAlign="center">Our AI will analyze your skills to generate custom interview questions.</Text>
+            <Button colorScheme="purple" size="lg" px={10} onClick={() => window.location.href="/dashboard/resume"}>Get Started</Button>
+          </VStack>
+        ) : !testTaken ? (
+          <VStack spacing={4}>
+            <Text fontSize="lg" fontWeight="600">Step 2: Take the AI Screening Test</Text>
+            <Text color="gray.400" textAlign="center">A 15-question voice & text assessment tailored to your skills.</Text>
+            <Button colorScheme="green" size="lg" px={10} onClick={() => window.location.href="/dashboard"}>Go to Test Portal</Button>
+          </VStack>
+        ) : (
+          <VStack spacing={4}>
+            <Text fontSize="lg" fontWeight="600">Step 3: Awaiting Decision</Text>
+            <Text color="gray.400" textAlign="center">Your test has been submitted. The hiring team will review your results shortly.</Text>
+            <Button colorScheme="cyan" variant="outline" size="lg" px={10} onClick={() => window.location.href="/dashboard/results"}>Check Status</Button>
+          </VStack>
+        )}
+      </Box>
+    </VStack>
+  );
+}
+
+function StatCard({ label, value, icon, color }) {
+  return (
+    <Box bg="rgba(255,255,255,0.03)" p={6} borderRadius="2xl" borderLeft={`4px solid`} borderLeftColor={color} minW="180px" shadow="md">
+      <HStack spacing={4}>
+        <Text fontSize="3xl">{icon}</Text>
+        <VStack align="start" spacing={0}>
+          <Text fontSize="2xl" fontWeight="bold">{value}</Text>
+          <Text fontSize="xs" color="gray.400" textTransform="uppercase">{label}</Text>
+        </VStack>
+      </HStack>
+    </Box>
+  );
+}
+
+function StepIndicator({ active, label, done }) {
+  return (
+    <VStack zIndex={1} bg="transparent">
+      <Box 
+        w="34px" h="34px" borderRadius="full" 
+        bg={done ? "green.400" : active ? "cyan.500" : "gray.700"} 
+        display="flex" alignItems="center" justifyContent="center"
+        boxShadow={active ? "0 0 15px rgba(0, 255, 255, 0.3)" : "none"}
+      >
+        {done ? "✓" : ""}
+      </Box>
+      <Text fontSize="xs" fontWeight={active ? "600" : "400"} color={active ? "white" : "gray.500"}>{label}</Text>
+    </VStack>
   );
 }
 
@@ -191,7 +281,7 @@ export default function Dashboard({ hideSidebar }) {
                   return;
                 }
                 if (testTaken) {
-                  toast({ title: "You have already taken the test.", status: "info" });
+                  toast({ title: "One test at a time! You have already submitted your test.", status: "info" });
                   return;
                 }
                 setPendingTest(true);
@@ -200,7 +290,7 @@ export default function Dashboard({ hideSidebar }) {
               onViewResults={() => navigate("/dashboard/results")}
             />
           } />
-          <Route path="overview" element={<Overview />} />
+          <Route path="overview" element={<Overview user={user} resumeUploaded={resumeUploaded} testTaken={testTaken} />} />
           <Route path="resume" element={<Resume />} />
           <Route path="test" element={<Test />} />
           <Route path="results" element={<Results />} />

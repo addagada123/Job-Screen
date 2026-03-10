@@ -61,18 +61,34 @@ async function askDeepSeek(prompt, language = "English") {
 
 // --- POST /api/evaluate ---
 router.post('/evaluate', async (req, res) => {
-  const { prompt, model = "openai", skills = [], language = "English", type = "question" } = req.body;
+  const { prompt, model = "openai", skills = [], language = "English", type = "question", questionText = "" } = req.body;
   try {
     let aiText = "";
     let usedPrompt = prompt;
-    // If generating a question, include skills
-    if (type === "question" && skills.length > 0) {
-      usedPrompt = `Generate a single interview question relevant to these skills: ${skills.join(", ")}. Respond as JSON: {text: string, category: string}.`;
+    // If generating a question
+    if (type === "question") {
+      if (skills.length > 0) {
+        usedPrompt = `Generate a single interview question relevant to these skills: ${skills.join(", ")}. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+      } else {
+        usedPrompt = `Generate a single general interview question. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+      }
     }
     // If evaluating, include language and context
     if (type === "evaluation") {
-      usedPrompt = `Evaluate the following answer in ${language}. Consider context, accuracy, and language. ${prompt}`;
+      usedPrompt = `You are evaluating an interview answer.
+Question Context: "${questionText || 'General interview question'}"
+Candidate's Answer: "${prompt}"
+Language used: ${language}
+
+Task: Determine how relevant the candidate's answer is to the context of the question. 
+Respond ONLY with valid JSON exactly like this:
+{
+  "relevancy": <number between 0 and 100>,
+  "aiText": "<brief feedback in ${language}>"
+}
+Do not include any other text or markdown block markers.`;
     }
+
     if (model === "openai") {
       aiText = await askOpenAI(usedPrompt, language);
     } else if (model === "gemini") {
@@ -82,7 +98,39 @@ router.post('/evaluate', async (req, res) => {
     } else {
       return res.status(400).json({ error: "Unknown model" });
     }
-    res.json({ aiText });
+
+    // Clean any potential markdowns from aiText payload
+    let cleanAiText = aiText.trim();
+    if (cleanAiText.startsWith("```json")) cleanAiText = cleanAiText.replace(/^```json/, "").replace(/```$/, "").trim();
+    else if (cleanAiText.startsWith("```")) cleanAiText = cleanAiText.replace(/^```/, "").replace(/```$/, "").trim();
+
+    let parsedResult;
+    try {
+      parsedResult = JSON.parse(cleanAiText);
+    } catch (e) {
+      console.warn("Failed to parse JSON from AI, attempting rough extraction:", cleanAiText);
+      // Fallback
+      if (type === "question") {
+        parsedResult = { text: aiText, category: "General" };
+      } else {
+        parsedResult = { relevancy: 0, aiText: aiText };
+      }
+    }
+
+    if (type === "evaluation") {
+      const relevancy = typeof parsedResult.relevancy === "number" ? parsedResult.relevancy : 0;
+      const isCorrect = relevancy >= 70;
+      res.json({
+        relevancy,
+        correctness: isCorrect,
+        score: isCorrect ? 1 : 0,
+        aiText: parsedResult.aiText || ""
+      });
+    } else {
+      // Return generated question JSON
+      res.json(parsedResult);
+    }
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

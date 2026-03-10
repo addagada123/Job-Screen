@@ -61,12 +61,14 @@ export async function updateUserScore(email, score) {
   return res.json();
 }
 
-// Upload resume (multipart — handled directly in Resume.jsx; this is the JSON variant)
-export async function uploadResume(email, resumeText) {
+// Upload resume (multipart FormData)
+export async function uploadResume(file) {
+  const formData = new FormData();
+  formData.append("resume", file);
+  
   const res = await fetch(`${API_BASE}/upload-resume`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, resumeText })
+    body: formData
   });
   if (!res.ok) throw new Error("Resume upload failed");
   return res.json();
@@ -80,13 +82,67 @@ export async function getResume(email) {
 }
 
 // Evaluate answer (question generation + evaluation unified endpoint)
-export async function evaluateAnswer(prompt, model, language = "English") {
+export async function evaluateAnswer(prompt, model, language = "English", questionText = "") {
   const res = await fetch(`${API_BASE}/api/evaluate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model, language, type: "evaluation" })
+    body: JSON.stringify({ prompt, model, language, type: "evaluation", questionText })
   });
   if (!res.ok) throw new Error("Evaluation API error");
+  return res.json();
+}
+
+// Get user candidate status (selected/rejected)
+export async function getUserStatus(email) {
+  const res = await fetch(`${API_BASE}/api/user-status?email=${encodeURIComponent(email)}`);
+  if (!res.ok) throw new Error("Failed to fetch user status");
+  return res.json();
+}
+
+// Select or reject candidate (admin)
+export async function selectCandidate(email, selection) {
+  const res = await fetch(`${API_BASE}/api/admin/select`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, selection })
+  });
+  if (!res.ok) throw new Error("Failed to update selection");
+  return res.json();
+}
+
+// Get all pending admin requests
+export async function getAdminRequests() {
+  const res = await fetch(`${API_BASE}/api/admin/requests`);
+  if (!res.ok) throw new Error("Failed to fetch requests");
+  return res.json();
+}
+
+// Approve or reject admin request
+export async function approveAdminRequest(email, approve) {
+  const res = await fetch(`${API_BASE}/api/admin/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, approve })
+  });
+  if (!res.ok) throw new Error("Failed to process admin request");
+  return res.json();
+}
+
+// Get all users with full admin details
+export async function getAdminUsers() {
+  const res = await fetch(`${API_BASE}/api/admin/users`);
+  if (!res.ok) throw new Error("Failed to fetch admin users");
+  return res.json();
+}
+
+// Mark test as taken
+export async function markTestTaken(email) {
+  const res = await fetch(`${API_BASE}/api/mark-test-taken`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) throw new Error("Failed to mark test as taken");
   return res.json();
 }
 
@@ -99,5 +155,11 @@ export default {
   updateUserScore,
   uploadResume,
   getResume,
-  evaluateAnswer
+  evaluateAnswer,
+  getUserStatus,
+  selectCandidate,
+  getAdminRequests,
+  approveAdminRequest,
+  getAdminUsers,
+  markTestTaken
 };

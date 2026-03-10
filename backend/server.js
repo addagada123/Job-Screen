@@ -293,7 +293,6 @@
 		}
 	});
 
-
 	// New upload-resume endpoint (file upload)
 	app.post('/upload-resume', upload.single('resume'), async (req, res) => {
 		try {

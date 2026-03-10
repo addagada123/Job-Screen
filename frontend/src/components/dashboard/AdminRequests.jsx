@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, Text } from "@chakra-ui/react";
+import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, Text, useToast } from "@chakra-ui/react";
+import { getAdminRequests, approveAdminRequest } from "../../api";
 
 export default function AdminRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const toast = useToast();
 
   const fetchRequests = () => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_BASE}/api/admin/requests`)
-      .then(res => res.json())
+    getAdminRequests()
       .then(data => {
         setRequests(data);
         setLoading(false);
@@ -24,12 +25,14 @@ export default function AdminRequests() {
     fetchRequests();
   }, []);
 
-  const handleApprove = (email, approve) => {
-    fetch(`${import.meta.env.VITE_API_BASE}/api/admin/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, approve })
-    }).then(() => fetchRequests());
+  const handleApprove = async (email, approve) => {
+    try {
+      await approveAdminRequest(email, approve);
+      toast({ title: approve ? "Admin approved!" : "Request rejected", status: approve ? "success" : "info" });
+      fetchRequests();
+    } catch (err) {
+      toast({ title: "Operation failed", status: "error" });
+    }
   };
 
   return (
