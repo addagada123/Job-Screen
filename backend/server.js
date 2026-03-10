@@ -6,6 +6,7 @@
 	const { MongoClient, ObjectId } = require('mongodb');
 	const multer = require('multer');
 	const path = require('path');
+	const fs = require('fs');
 	const parseResume = require('./resumeParser');
 	const extractSkills = require('./skillExtract');
 	// const { openai } = require('./ai'); // Uncomment and configure for AI job matching
@@ -428,13 +429,27 @@
 	app.use('/api', aiRouter);
 
 	// Serve static files from the frontend/dist directory
-	// Path is ../frontend/dist relative to backend/server.js
-	app.use(express.static(path.join(__dirname, '../frontend/dist')));
+	const frontendDistPath = path.join(__dirname, '../frontend/dist');
 	
-	// Support React Client-Side Routing: fallback to index.html
-	app.get('*', (req, res) => {
-		res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-	});
+	if (fs.existsSync(frontendDistPath)) {
+		console.log(`Serving static files from: ${frontendDistPath}`);
+		app.use(express.static(frontendDistPath));
+		
+		// Support React Client-Side Routing: fallback to index.html
+		app.get('*', (req, res) => {
+			const indexPath = path.join(frontendDistPath, 'index.html');
+			if (fs.existsSync(indexPath)) {
+				res.sendFile(indexPath);
+			} else {
+				res.status(404).send('Frontend built but index.html missing. Check build logs.');
+			}
+		});
+	} else {
+		console.warn(`Static files directory NOT found at: ${frontendDistPath}`);
+		app.get('/', (req, res) => {
+			res.status(200).send('API is running, but frontend build was not found. Please ensure "npm run build" was executed in the frontend folder.');
+		});
+	}
 
 	// Start server
 	const PORT = process.env.PORT || 5000;
