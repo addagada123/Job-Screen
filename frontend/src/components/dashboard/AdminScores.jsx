@@ -7,7 +7,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import { getAllScores, selectCandidate } from "../../api";
 
-export default function AdminScores({ embedMode = false }) {
+export default function AdminScores({ embedMode = false, onStatusChange }) {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,6 +38,7 @@ export default function AdminScores({ embedMode = false }) {
     try {
       await selectCandidate(email, selection);
       fetchScores();
+      if (onStatusChange) onStatusChange();
       toast({ title: "Updated!", status: "success", duration: 2000 });
     } catch (err) {
       toast({ title: "Selection failed", description: err.message, status: "error" });

@@ -55,9 +55,9 @@ function Overview({ user, resumeUploaded, testTaken }) {
   const [stats, setStats] = useState({ total: 0, pending: 0, selected: 0, rejected: 0, requests: 0 });
   const [loading, setLoading] = useState(user?.isAdmin);
 
-  useEffect(() => {
+  const fetchStats = () => {
     if (user?.isAdmin) {
-      // Fetch stats for admin
+      setLoading(true);
       Promise.all([
         getAdminUsers(),
         getAdminRequests()
@@ -73,6 +73,10 @@ function Overview({ user, resumeUploaded, testTaken }) {
         setLoading(false);
       }).catch(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchStats();
   }, [user]);
 
   if (user?.isAdmin) {
@@ -101,7 +105,7 @@ function Overview({ user, resumeUploaded, testTaken }) {
 
         <Box>
            <Heading size="md" mb={4} color="white">Top Ranking Candidates</Heading>
-           <AdminScores embedMode={true} />
+           <AdminScores embedMode={true} onStatusChange={fetchStats} />
         </Box>
 
         <Box bg="rgba(255,255,255,0.02)" p={6} borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)">

@@ -171,30 +171,17 @@ export default function Sidebar({ user }) {
             Menu
           </Text>
           <NavItem to="/dashboard/overview">📊 Overview</NavItem>
-          <NavItem to="/dashboard/results">📈 Results</NavItem>
-          {!user?.isAdmin && (
+          {user?.isAdmin ? (
             <>
+              <NavItem to="/dashboard/admin-requests">📋 Requests</NavItem>
+              <NavItem to="/dashboard/admin-users">👥 Users</NavItem>
+              <NavItem to="/dashboard/results">📈 Results</NavItem>
+            </>
+          ) : (
+            <>
+              <NavItem to="/dashboard/results">📈 Results</NavItem>
               <NavItem to="/dashboard/resume">📄 Resume</NavItem>
               <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
-            </>
-          )}
-
-          {user?.isAdmin && (
-            <>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                color="gray.600"
-                textTransform="uppercase"
-                letterSpacing="wider"
-                mt={6}
-                mb={2}
-                px={4}
-              >
-                Admin
-              </Text>
-              <NavItem to="/dashboard/admin-users" isAdmin>👥 Users</NavItem>
-              <NavItem to="/dashboard/admin-requests" isAdmin>📋 Requests</NavItem>
             </>
           )}
         </VStack>
