@@ -171,11 +171,11 @@ export default function Sidebar({ user }) {
             Menu
           </Text>
           <NavItem to="/dashboard/overview">📊 Overview</NavItem>
+          <NavItem to="/dashboard/results">📈 Results</NavItem>
           {!user?.isAdmin && (
             <>
               <NavItem to="/dashboard/resume">📄 Resume</NavItem>
               <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
-              <NavItem to="/dashboard/results">📈 Results</NavItem>
             </>
           )}
 
@@ -193,7 +193,6 @@ export default function Sidebar({ user }) {
               >
                 Admin
               </Text>
-              <NavItem to="/dashboard/admin-scores" isAdmin>🏆 Scores</NavItem>
               <NavItem to="/dashboard/admin-users" isAdmin>👥 Users</NavItem>
               <NavItem to="/dashboard/admin-requests" isAdmin>📋 Requests</NavItem>
             </>

@@ -310,8 +310,7 @@ export default function Dashboard({ hideSidebar }) {
           <Route path="overview" element={<Overview user={user} resumeUploaded={resumeUploaded} testTaken={testTaken} />} />
           <Route path="resume" element={<Resume />} />
           <Route path="test" element={<Test />} />
-          <Route path="results" element={<Results />} />
-          <Route path="admin-scores" element={<AdminScores />} />
+          <Route path="results" element={user.isAdmin ? <AdminScores /> : <Results />} />
           <Route path="admin-requests" element={<AdminRequests />} />
           <Route path="admin-users" element={<AdminUsers />} />
         </Routes>

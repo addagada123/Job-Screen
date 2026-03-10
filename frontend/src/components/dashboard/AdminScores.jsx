@@ -121,7 +121,7 @@ export default function AdminScores({ embedMode = false }) {
     >
       {!embedMode && (
         <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
-          Talent Acquisition Dashboard
+          Candidate Results
         </Heading>
       )}
       
@@ -147,9 +147,9 @@ export default function AdminScores({ embedMode = false }) {
 
           <Tabs variant="soft-rounded" colorScheme="cyan">
             <TabList mb={6} justifyContent="center" bg="rgba(255,255,255,0.03)" p={2} borderRadius="full">
-              <Tab px={8}>Pending Review ({filteredScores("pending").length})</Tab>
-              <Tab px={8}>Selected ({filteredScores("selected").length})</Tab>
-              <Tab px={8}>Rejected ({filteredScores("rejected").length})</Tab>
+              <Tab px={8}>Pending Candidates ({filteredScores("pending").length})</Tab>
+              <Tab px={8}>Selected Candidates ({filteredScores("selected").length})</Tab>
+              <Tab px={8}>Rejected Candidates ({filteredScores("rejected").length})</Tab>
             </TabList>
             
             <TabPanels>
