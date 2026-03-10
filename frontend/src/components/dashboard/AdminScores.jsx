@@ -120,9 +120,12 @@ export default function AdminScores({ embedMode = false }) {
       border={embedMode ? "none" : "1px solid rgba(255,255,255,0.05)"}
     >
       {!embedMode && (
-        <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
-          Candidate Results
-        </Heading>
+        <VStack spacing={2} mb={8} align="center">
+          <Tag colorScheme="cyan" variant="subtle" borderRadius="full" px={4}>RECRUITER ACCESS ONLY</Tag>
+          <Heading size="lg" textAlign="center" bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
+            Candidate Performance Results
+          </Heading>
+        </VStack>
       )}
       
       {loading ? (

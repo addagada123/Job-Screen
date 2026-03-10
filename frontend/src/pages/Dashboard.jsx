@@ -84,7 +84,7 @@ function Overview({ user, resumeUploaded, testTaken }) {
             Recruiter Command Center
           </Heading>
           <HStack spacing={4}>
-             <Button size="sm" colorScheme="cyan" variant="outline" onClick={() => navigate("/dashboard/admin-scores")}>Rankings</Button>
+             <Button size="sm" colorScheme="cyan" variant="outline" onClick={() => navigate("/dashboard/results")}>Rankings</Button>
              <Button size="sm" colorScheme="purple" variant="outline" onClick={() => navigate("/dashboard/admin-requests")}>Requests</Button>
           </HStack>
         </HStack>
