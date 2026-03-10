@@ -9,7 +9,7 @@ import AdminUsers from "../components/dashboard/AdminUsers";
 import { Outlet, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../utils/auth";
-import { getAdminUsers, getAdminRequests } from "../api";
+import { getAdminUsers, getAdminRequests, getResume } from "../api";
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
@@ -195,6 +195,17 @@ export default function Dashboard({ hideSidebar }) {
       navigate("/login");
     }
     setResumeUploaded(!!localStorage.getItem("resumeUploaded"));
+    if (u) {
+      getResume(u.email).then(data => {
+        if (data && data.resume) {
+          setResumeUploaded(true);
+          localStorage.setItem("resumeUploaded", "true");
+        } else {
+          setResumeUploaded(false);
+          localStorage.removeItem("resumeUploaded");
+        }
+      }).catch(() => {});
+    }
     setTestTaken(u && u.testTaken);
   }, [navigate]);
 

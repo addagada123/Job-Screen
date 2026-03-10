@@ -1,7 +1,5 @@
-import { Box, Heading, VStack, Text, Button, Input, useToast, Tag, Wrap, WrapItem } from "@chakra-ui/react";
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { uploadResume } from "../../api";
+import { getCurrentUser } from "../../utils/auth";
 
 function Resume() {
   const [resumeName, setResumeName] = useState("");
@@ -26,7 +24,8 @@ function Resume() {
     }
     setLoading(true);
     try {
-      const data = await uploadResume(file);
+      const user = getCurrentUser();
+      const data = await uploadResume(file, user?.email);
       if (!data.success) throw new Error(data.error || "Upload failed");
 
       const detectedSkills = data.skills || [];

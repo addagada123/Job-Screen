@@ -110,7 +110,7 @@ export default function Sidebar({ user }) {
         pointerEvents="none"
       />
 
-      <VStack spacing={0} h="100%" py={6} position="relative" zIndex={1}>
+      <VStack spacing={0} h="100%" py={6} pt={24} position="relative" zIndex={1}>
         {/* User Profile */}
         <VStack spacing={3} mb={8} px={4} w="100%">
           <Box
@@ -170,10 +170,10 @@ export default function Sidebar({ user }) {
           >
             Menu
           </Text>
-          <NavItem to="overview">📊 Overview</NavItem>
-          <NavItem to="resume">📄 Resume</NavItem>
-          <NavItem to="test" onClick={handleTestClick}>🧪 Test</NavItem>
-          <NavItem to="results">📈 Results</NavItem>
+          <NavItem to="/dashboard/overview">📊 Overview</NavItem>
+          <NavItem to="/dashboard/resume">📄 Resume</NavItem>
+          <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
+          <NavItem to="/dashboard/results">📈 Results</NavItem>
 
           {user?.isAdmin && (
             <>
@@ -189,9 +189,9 @@ export default function Sidebar({ user }) {
               >
                 Admin
               </Text>
-              <NavItem to="admin-scores" isAdmin>🏆 Scores</NavItem>
-              <NavItem to="admin-users" isAdmin>👥 Users</NavItem>
-              <NavItem to="admin-requests" isAdmin>📋 Requests</NavItem>
+              <NavItem to="/dashboard/admin-scores" isAdmin>🏆 Scores</NavItem>
+              <NavItem to="/dashboard/admin-users" isAdmin>👥 Users</NavItem>
+              <NavItem to="/dashboard/admin-requests" isAdmin>📋 Requests</NavItem>
             </>
           )}
         </VStack>

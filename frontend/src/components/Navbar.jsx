@@ -55,7 +55,7 @@ export default function Navbar() {
       }}
     >
       <Box position="relative" zIndex={1}>
-        <Link to="/">
+        <Link to={user ? "/dashboard" : "/"}>
           <HStack spacing={2}>
             <Box
               w={10}

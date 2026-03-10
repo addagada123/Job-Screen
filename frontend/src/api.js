@@ -62,9 +62,10 @@ export async function updateUserScore(email, score) {
 }
 
 // Upload resume (multipart FormData)
-export async function uploadResume(file) {
+export async function uploadResume(file, email) {
   const formData = new FormData();
   formData.append("resume", file);
+  formData.append("email", email);
   
   const res = await fetch(`${API_BASE}/upload-resume`, {
     method: "POST",

@@ -300,21 +300,22 @@
 				return res.status(400).json({ error: 'No file uploaded' });
 			}
 			const text = await parseResume(req.file);
+			const { email } = req.body;
 			// Skill extraction
 			const skills = extractSkills(text);
-			// AI job matching placeholder (uncomment and implement as needed)
-			// const response = await openai.chat.completions.create({
-			//   model: "gpt-4o-mini",
-			//   messages: [
-			//     { role: "user", content: `Extract job type and experience from this resume:\n${text}` }
-			//   ]
-			// });
-			// const aiResult = response.choices[0].message.content;
+
+			// Persist resume text to MongoDB if email is provided
+			if (email) {
+				await usersCollection.updateOne(
+					{ email },
+					{ $set: { resume: text, skills: skills } }
+				);
+			}
+
 			res.json({
 				success: true,
 				resumeText: text,
 				skills,
-				// aiResult
 			});
 		} catch (err) {
 			res.status(500).json({ error: err.message });

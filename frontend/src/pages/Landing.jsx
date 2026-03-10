@@ -1,4 +1,6 @@
-import { Box, Heading, Text, Button, VStack, HStack, Icon } from "@chakra-ui/react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCurrentUser } from "../utils/auth";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
 
@@ -29,6 +31,14 @@ const gradientMove = keyframes`
 `;
 
 export default function Landing() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
   return (
     <Box
       minH="100vh"
