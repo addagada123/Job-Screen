@@ -4,7 +4,7 @@ import {
   Button, HStack, Tag, Tabs, TabList, Tab, TabPanels, TabPanel, 
   Input, InputGroup, InputLeftElement, useToast, VStack, Flex 
 } from "@chakra-ui/react";
-import { SearchIcon } from "@chakra-ui/icons";
+import { SearchIcon, RepeatIcon } from "@chakra-ui/icons";
 import { getAllScores, selectCandidate } from "../../api";
 
 export default function AdminScores({ embedMode = false, onStatusChange }) {
@@ -135,19 +135,30 @@ export default function AdminScores({ embedMode = false, onStatusChange }) {
         <Text color="red.300" textAlign="center">{error}</Text>
       ) : (
         <>
-          <InputGroup mb={8} maxW="400px" mx="auto">
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color="gray.500" />
-            </InputLeftElement>
-            <Input 
-              placeholder="Search by name or email..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              bg="rgba(255,255,255,0.05)"
-              border="1px solid rgba(255,255,255,0.1)"
-              _focus={{ borderColor: "cyan.400", boxShadow: "0 0 10px rgba(0, 255, 255, 0.2)" }}
-            />
-          </InputGroup>
+          <HStack mb={8} spacing={4} maxW="600px" mx="auto">
+            <InputGroup flex="1">
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="gray.500" />
+              </InputLeftElement>
+              <Input 
+                placeholder="Search by name or email..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                bg="rgba(255,255,255,0.05)"
+                border="1px solid rgba(255,255,255,0.1)"
+                _focus={{ borderColor: "cyan.400", boxShadow: "0 0 10px rgba(0, 255, 255, 0.2)" }}
+              />
+            </InputGroup>
+            <Button 
+                leftIcon={<RepeatIcon />} 
+                onClick={fetchScores} 
+                isLoading={loading}
+                variant="ghost"
+                colorScheme="cyan"
+            >
+                Refresh
+            </Button>
+          </HStack>
 
           <Tabs variant="soft-rounded" colorScheme="cyan">
             <TabList mb={6} justifyContent="center" bg="rgba(255,255,255,0.03)" p={2} borderRadius="full">

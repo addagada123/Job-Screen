@@ -174,7 +174,7 @@ export default function Sidebar({ user }) {
           {user?.isAdmin ? (
             <>
               <NavItem to="/dashboard/admin-requests">📋 Requests</NavItem>
-              <NavItem to="/dashboard/admin-users">👥 Users</NavItem>
+              <NavItem to="/dashboard/admin-users">👥 User Management</NavItem>
               <NavItem to="/dashboard/results">📈 Results</NavItem>
             </>
           ) : (
