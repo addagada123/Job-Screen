@@ -39,27 +39,35 @@ export default function AdminRequests() {
     <Box maxW="700px" mx="auto" mt={8} bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} boxShadow="xl">
       <Heading size="lg" mb={6} textAlign="center">Admin Access Requests</Heading>
       {loading ? <Spinner size="xl" /> : error ? <Text color="red.300">{error}</Text> : (
-        <Table variant="simple" colorScheme="cyan">
-          <Thead>
-            <Tr>
-              <Th>Name</Th>
-              <Th>Email</Th>
-              <Th>Action</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {requests.map((r, i) => (
-              <Tr key={i}>
-                <Td>{r.name}</Td>
-                <Td>{r.email}</Td>
-                <Td>
-                  <Button colorScheme="green" size="sm" mr={2} onClick={() => handleApprove(r.email, true)}>Approve</Button>
-                  <Button colorScheme="red" size="sm" onClick={() => handleApprove(r.email, false)}>Reject</Button>
-                </Td>
+        requests.length === 0 ? (
+          <Text color="gray.400" textAlign="center" py={10} fontSize="lg">
+            No pending admin access requests.
+          </Text>
+        ) : (
+          <Table variant="simple" colorScheme="cyan">
+            <Thead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Email</Th>
+                <Th>Action</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {requests.map((r, i) => (
+                <Tr key={i}>
+                  <Td>{r.name}</Td>
+                  <Td>{r.email}</Td>
+                  <Td>
+                    <HStack spacing={2}>
+                      <Button colorScheme="green" size="sm" onClick={() => handleApprove(r.email, true)}>Approve</Button>
+                      <Button colorScheme="red" size="sm" onClick={() => handleApprove(r.email, false)}>Reject</Button>
+                    </HStack>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )
       )}
     </Box>
   );

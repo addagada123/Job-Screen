@@ -56,67 +56,78 @@ export default function AdminUsers() {
     }
   };
 
-  const UserTable = ({ data, type }) => (
-    <Table variant="simple" colorScheme="cyan">
-      <Thead>
-        <Tr>
-          <Th>Name</Th>
-          <Th>Email</Th>
-          <Th>{type === 'admin' ? 'Role' : 'Test Status'}</Th>
-          <Th>Selection</Th>
-          <Th>Actions</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {data.map((u, i) => (
-          <Tr key={u.email + i}>
-            <Td><Text fontWeight="600">{u.name || "-"}</Text></Td>
-            <Td><Link href={`mailto:${u.email}`} color="cyan.300">{u.email}</Link></Td>
-            <Td>
-              {type === 'admin' ? (
-                <Tag colorScheme="yellow">Admin</Tag>
-              ) : (
-                u.testTaken ? <Tag colorScheme="green">Taken</Tag> : <Tag colorScheme="gray">Pending</Tag>
-              )}
-            </Td>
-            <Td>
-              {u.selection === "selected" && <Tag colorScheme="green">Selected</Tag>}
-              {u.selection === "rejected" && <Tag colorScheme="red">Rejected</Tag>}
-              {!u.selection && <Tag colorScheme="gray">None</Tag>}
-            </Td>
-            <Td>
-              {type === 'admin' ? (
-                <Button 
-                  size="xs" colorScheme="orange" variant="outline"
-                  isLoading={selecting === (u.email + "revoke")}
-                  onClick={() => handleRevoke(u.email)}
-                >
-                  Revoke Access
-                </Button>
-              ) : (
-                <HStack>
-                  <Button 
-                    size="xs" colorScheme="green" variant={u.selection === "selected" ? "solid" : "outline"}
-                    isLoading={selecting === (u.email + "selected")}
-                    onClick={() => handleSelect(u.email, "selected")}
-                  >
-                    Select
-                  </Button>
-                  <Button 
-                    size="xs" colorScheme="red" variant={u.selection === "rejected" ? "solid" : "outline"}
-                    isLoading={selecting === (u.email + "rejected")}
-                    onClick={() => handleSelect(u.email, "rejected")}
-                  >
-                    Reject
-                  </Button>
-                </HStack>
-              )}
-            </Td>
+  const UserTable = ({ data, type }) => {
+    if (data.length === 0) {
+      return (
+        <Center py={10}>
+          <Text color="gray.400" fontSize="lg">
+            {type === 'admin' ? "No administrators found." : "No candidates found."}
+          </Text>
+        </Center>
+      );
+    }
+    return (
+      <Table variant="simple" colorScheme="cyan">
+        <Thead>
+          <Tr>
+            <Th>Name</Th>
+            <Th>Email</Th>
+            <Th>{type === 'admin' ? 'Role' : 'Test Status'}</Th>
+            <Th>Selection</Th>
+            <Th>Actions</Th>
           </Tr>
-        ))}
-      </Tbody>
-    </Table>
-  );
+        </Thead>
+        <Tbody>
+          {data.map((u, i) => (
+            <Tr key={u.email + i}>
+              <Td><Text fontWeight="600">{u.name || "-"}</Text></Td>
+              <Td><Link href={`mailto:${u.email}`} color="cyan.300">{u.email}</Link></Td>
+              <Td>
+                {type === 'admin' ? (
+                  <Tag colorScheme="yellow">Admin</Tag>
+                ) : (
+                  u.testTaken ? <Tag colorScheme="green">Taken</Tag> : <Tag colorScheme="gray">Pending</Tag>
+                )}
+              </Td>
+              <Td>
+                {u.selection === "selected" && <Tag colorScheme="green">Selected</Tag>}
+                {u.selection === "rejected" && <Tag colorScheme="red">Rejected</Tag>}
+                {!u.selection && <Tag colorScheme="gray">None</Tag>}
+              </Td>
+              <Td>
+                {type === 'admin' ? (
+                  <Button 
+                    size="xs" colorScheme="orange" variant="outline"
+                    isLoading={selecting === (u.email + "revoke")}
+                    onClick={() => handleRevoke(u.email)}
+                  >
+                    Revoke Access
+                  </Button>
+                ) : (
+                  <HStack>
+                    <Button 
+                      size="xs" colorScheme="green" variant={u.selection === "selected" ? "solid" : "outline"}
+                      isLoading={selecting === (u.email + "selected")}
+                      onClick={() => handleSelect(u.email, "selected")}
+                    >
+                      Select
+                    </Button>
+                    <Button 
+                      size="xs" colorScheme="red" variant={u.selection === "rejected" ? "solid" : "outline"}
+                      isLoading={selecting === (u.email + "rejected")}
+                      onClick={() => handleSelect(u.email, "rejected")}
+                    >
+                      Reject
+                    </Button>
+                  </HStack>
+                )}
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    );
+  };
 
   const filteredUsers = (isAdmin) => users.filter(u => !!u.isAdmin === isAdmin);
 
