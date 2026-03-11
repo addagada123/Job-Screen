@@ -22,10 +22,8 @@ export default function Test() {
     switches: 0,
     maxSwitches: 4
   });
-  const [loading, setLoading] = useState(false);
   const [currentScore, setCurrentScore] = useState(0);
   const scoreRef = useRef(0);
-  const [aiModel, setAiModel] = useState("openai");
   const [selectedLanguage, setSelectedLanguage] = useState(() => localStorage.getItem("selectedLanguage") || "English");
   const [evalResult, setEvalResult] = useState(null);
   const [qLoading, setQLoading] = useState(false);
@@ -201,7 +199,7 @@ export default function Test() {
     setVoiceAnswer("");
     try {
       const { skills } = getSkillsAndLanguage();
-      const q = await generateQuestion(aiModel, skills, selectedLanguage);
+      const q = await generateQuestion("openai", skills, selectedLanguage);
       setQuestion(prev => ({
         ...prev,
         text: q.text || "No question available.",
@@ -223,7 +221,7 @@ export default function Test() {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(answer, aiModel, language, question.text);
+      const result = await evaluateAnswer(answer, "openai", language, question.text);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       // Enforce 70% context relevancy threshold
@@ -307,9 +305,9 @@ export default function Test() {
   const resetSilenceTimer = () => {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     silenceTimerRef.current = setTimeout(() => {
-      console.log("3.5s Silence detected, stopping recognition...");
+      console.log("6.0s Silence detected, stopping recognition...");
       stopRecognition();
-    }, 3500);
+    }, 6000);
   };
 
   const startRecognition = () => {
@@ -390,7 +388,7 @@ export default function Test() {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(voiceAnswer, aiModel, language, question.text);
+      const result = await evaluateAnswer(voiceAnswer, "openai", language, question.text);
       setEvalResult(result);
       toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
       const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
@@ -440,22 +438,8 @@ export default function Test() {
             </List>
           </Box>
 
-          <HStack spacing={6} align="start">
-            <Box flex={1}>
-              <Text fontSize="sm" mb={2} fontWeight="bold" color="gray.400">SELECT AI MODEL</Text>
-              <Select 
-                value={aiModel} 
-                onChange={e => setAiModel(e.target.value)} 
-                bg="gray.800" 
-                borderColor="rgba(255,255,255,0.1)"
-                _hover={{ borderColor: "cyan.400" }}
-              >
-                <option value="openai">OpenAI (Recommended)</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="deepseek">DeepSeek AI</option>
-              </Select>
-            </Box>
-            <Box flex={1}>
+          <HStack spacing={6} align="start" justify="center">
+            <Box flex={1} maxW="300px">
               <Text fontSize="sm" mb={2} fontWeight="bold" color="gray.400">ANSWERING LANGUAGE</Text>
               <Select 
                 value={selectedLanguage} 

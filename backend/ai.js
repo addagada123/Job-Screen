@@ -55,8 +55,31 @@ async function askDeepSeek(prompt, language = "English") {
       max_tokens: 256
     })
   });
+  if (!res.ok) throw new Error("DeepSeek API error");
   const data = await res.json();
   return data.choices[0].message.content;
+}
+
+// --- Multi-Modal Orchestrator with Fallback ---
+async function multiModalAsk(prompt, language = "English") {
+  const models = [
+    { name: "openai", fn: askOpenAI },
+    { name: "gemini", fn: askGemini },
+    { name: "deepseek", fn: askDeepSeek }
+  ];
+
+  let lastError = null;
+  for (const model of models) {
+    try {
+      console.log(`Attempting AI request with: ${model.name}`);
+      const result = await model.fn(prompt, language);
+      return result;
+    } catch (err) {
+      console.warn(`${model.name} failed: ${err.message}. Falling back...`);
+      lastError = err;
+    }
+  }
+  throw new Error(`All AI models failed. Last error: ${lastError?.message}`);
 }
 
 // --- POST /api/evaluate ---
@@ -68,9 +91,11 @@ router.post('/evaluate', async (req, res) => {
     // If generating a question
     if (type === "question") {
       if (skills.length > 0) {
-        usedPrompt = `Generate a single interview question relevant to these skills: ${skills.join(", ")}. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional technical interviewer. Generate a single highly specific interview question relevant STRICTLY to these skills: ${skills.join(", ")}. 
+        IMPORTANT: The question MUST be about one or more of these skills only. Do not ask general behavioral questions.
+        Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
       } else {
-        usedPrompt = `Generate a single general interview question. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+        usedPrompt = `Generate a single professional interview question. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
       }
     }
     // If evaluating, include language and context
@@ -89,15 +114,8 @@ Respond ONLY with valid JSON exactly like this:
 Do not include any other text or markdown block markers.`;
     }
 
-    if (model === "openai") {
-      aiText = await askOpenAI(usedPrompt, language);
-    } else if (model === "gemini") {
-      aiText = await askGemini(usedPrompt, language);
-    } else if (model === "deepseek") {
-      aiText = await askDeepSeek(usedPrompt, language);
-    } else {
-      return res.status(400).json({ error: "Unknown model" });
-    }
+    // Use multiModalAsk for implicit fallback
+    aiText = await multiModalAsk(usedPrompt, language);
 
     // Clean any potential markdowns from aiText payload
     let cleanAiText = aiText.trim();
