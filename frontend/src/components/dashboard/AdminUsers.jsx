@@ -43,6 +43,19 @@ export default function AdminUsers() {
     }
   };
 
+  const handleSelect = async (email, selection) => {
+    setSelecting(email + selection);
+    try {
+      await selectCandidate(email, selection);
+      fetchUsers();
+      toast({ title: "Selection updated", status: "success" });
+    } catch (err) {
+      toast({ title: "Operation failed", status: "error" });
+    } finally {
+      setSelecting("");
+    }
+  };
+
   const UserTable = ({ data, type }) => (
     <Table variant="simple" colorScheme="cyan">
       <Thead>
