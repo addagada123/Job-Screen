@@ -27,6 +27,7 @@ export default function Test() {
   const [selectedLanguage, setSelectedLanguage] = useState(() => localStorage.getItem("selectedLanguage") || "English");
   const [evalResult, setEvalResult] = useState(null);
   const [qLoading, setQLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
   const [forceExit, setForceExit] = useState(false);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(60);

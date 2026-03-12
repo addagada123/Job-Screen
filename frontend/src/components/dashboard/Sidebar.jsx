@@ -66,6 +66,16 @@ export default function Sidebar({ user }) {
       toast({ title: "Please upload your resume first.", status: "warning" });
       return;
     }
+    if (user && user.testTaken) {
+      toast({
+        title: "Test already taken",
+        description: "You have already completed the assessment.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     navigate("/dashboard/test");
   };
 

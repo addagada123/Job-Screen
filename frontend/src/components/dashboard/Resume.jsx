@@ -15,9 +15,27 @@ function Resume() {
       return [];
     }
   });
+  const [testTaken, setTestTaken] = useState(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return !!user.testTaken;
+  });
   const fileInputRef = useRef();
   const toast = useToast();
   const navigate = useNavigate();
+
+  const handleTakeTest = () => {
+    if (testTaken) {
+      toast({
+        title: "Test already taken",
+        description: "You have already completed the assessment. Please wait for the results.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    navigate("/dashboard/test");
+  };
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -94,7 +112,7 @@ function Resume() {
               colorScheme="green"
               size="lg"
               w="full"
-              onClick={() => navigate("/dashboard/test")}
+              onClick={handleTakeTest}
             >
               Take Test Now
             </Button>
