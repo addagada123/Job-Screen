@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { 
   Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Spinner, Text, Link, 
-  Button, HStack, Tag, useToast, Tabs, TabList, Tab, TabPanels, TabPanel, VStack, Flex 
+  Button, HStack, Tag, useToast, Tabs, TabList, Tab, TabPanels, TabPanel, VStack, Flex, Center 
 } from "@chakra-ui/react";
 import { RepeatIcon } from "@chakra-ui/icons";
 import { getAdminUsers, selectCandidate, approveAdminRequest } from "../../api";

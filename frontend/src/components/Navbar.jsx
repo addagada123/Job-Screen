@@ -1,6 +1,6 @@
 
 import { Flex, Box, Button, Spacer, Text, HStack, IconButton } from "@chakra-ui/react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -9,15 +9,18 @@ const MotionFlex = motion.create(Flex);
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
   useEffect(() => {
-    const u = localStorage.getItem("user");
-    setUser(u ? JSON.parse(u) : null);
-    window.addEventListener("storage", () => {
-      const u2 = localStorage.getItem("user");
-      setUser(u2 ? JSON.parse(u2) : null);
-    });
-    return () => window.removeEventListener("storage", () => {});
-  }, []);
+    const handleStorageChange = () => {
+      const u = localStorage.getItem("user");
+      setUser(u ? JSON.parse(u) : null);
+    };
+
+    handleStorageChange();
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
