@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon, Spinner } from "@chakra-ui/react";
+import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon, Spinner, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, useDisclosure } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { evaluateAnswer, updateUserScore, markTestTaken } from "../../api";
 import { generateQuestion } from "../../api.question";
@@ -30,6 +30,8 @@ export default function Test() {
   const [loading, setLoading] = useState(false);
   const [testBlocked, setTestBlocked] = useState(false);
   const [forceExit, setForceExit] = useState(false);
+  const [testCompleted, setTestCompleted] = useState(false);
+  const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
   const [questionTimeLeft, setQuestionTimeLeft] = useState(60);
   const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
   const [adminNotification, setAdminNotification] = useState("");
@@ -223,8 +225,7 @@ export default function Test() {
     try {
       const { language } = getSkillsAndLanguage();
       const result = await evaluateAnswer(answer, "openai", language, question.text);
-      setEvalResult(result);
-      toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
+      toast({ title: "Answer Submitted!", status: "success", duration: 1500, isClosable: true });
       // Enforce 70% context relevancy threshold
       const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
       const isCorrect = relevancy >= 70;
@@ -265,7 +266,8 @@ export default function Test() {
           duration: 4000,
           isClosable: true
         });
-        setTestBlocked(true);
+        setTestCompleted(true);
+        onConfirmClose();
       } catch (err) {
         toast({ title: "Error submitting test", status: "error" });
       } finally {
@@ -277,6 +279,21 @@ export default function Test() {
     setQuestionTimeLeft(60);
     await loadQuestion();
   };
+
+  if (testCompleted) {
+    return (
+      <Box maxW="600px" mx="auto" mt={20} p={10} bg="rgba(30,38,51,0.7)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(0,255,255,0.2)" textAlign="center">
+        <Icon as={FaCheckCircle} w={16} h={16} color="green.400" mb={6} />
+        <Heading size="xl" mb={4} color="white">Thank you for submitting the test!</Heading>
+        <Text color="gray.400" fontSize="lg" mb={8}>
+          Your assessment has been recorded successfully. Our team will review your results.
+        </Text>
+        <Button size="lg" colorScheme="cyan" onClick={() => navigate("/dashboard")} px={10}>
+          Go to Dashboard
+        </Button>
+      </Box>
+    );
+  }
 
   if (testBlocked || forceExit) {
     return (
@@ -390,8 +407,7 @@ export default function Test() {
     try {
       const { language } = getSkillsAndLanguage();
       const result = await evaluateAnswer(voiceAnswer, "openai", language, question.text);
-      setEvalResult(result);
-      toast({ title: "Evaluation Complete!", status: "success", duration: 2000, isClosable: true });
+      toast({ title: "Answer Submitted!", status: "success", duration: 1500, isClosable: true });
       const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
       if (relevancy >= 70) {
         setCurrentScore(prev => prev + 1);
@@ -582,11 +598,22 @@ export default function Test() {
                 borderRadius="xl"
                 borderColor="rgba(255,255,255,0.1)"
                 _focus={{ borderColor: "cyan.400" }}
-                isDisabled={loading || qLoading || !!evalResult}
+                isDisabled={loading || qLoading}
               />
-              <Button colorScheme="cyan" type="submit" w="full" size="lg" h="14" isLoading={loading} isDisabled={qLoading || !!evalResult || !answer.trim()}>
-                Submit Answer
-              </Button>
+              <HStack spacing={4}>
+                <Button colorScheme="cyan" type="submit" flex={1} size="lg" h="14" isLoading={loading} isDisabled={qLoading || !answer.trim()}>
+                  Submit Answer
+                </Button>
+                {question.number === question.total ? (
+                  <Button colorScheme="green" onClick={onConfirmOpen} flex={1} size="lg" h="14" isDisabled={loading || qLoading}>
+                    Submit Test
+                  </Button>
+                ) : (
+                  <Button variant="outline" colorScheme="cyan" onClick={handleNext} flex={1} size="lg" h="14" isDisabled={loading || qLoading}>
+                    Next Question
+                  </Button>
+                )}
+              </HStack>
             </form>
           </TabPanel>
           <TabPanel px={0} pt={6}>
@@ -602,7 +629,7 @@ export default function Test() {
                   borderRadius="xl"
                   borderColor="rgba(255,255,255,0.1)"
                   _focus={{ borderColor: "cyan.400" }}
-                  isDisabled={loading || qLoading || !!evalResult}
+                  isDisabled={loading || qLoading}
                 />
                 <HStack spacing={4}>
                   <Button
@@ -610,7 +637,7 @@ export default function Test() {
                     colorScheme={isRecording ? "red" : "cyan"}
                     variant={isRecording ? "solid" : "outline"}
                     onClick={isRecording ? stopRecognition : startRecognition}
-                    isDisabled={loading || qLoading || !!evalResult}
+                    isDisabled={loading || qLoading}
                     flex={1}
                     h="14"
                   >
@@ -620,12 +647,23 @@ export default function Test() {
                     colorScheme="cyan"
                     type="submit"
                     isLoading={loading}
-                    isDisabled={qLoading || !!evalResult || !voiceAnswer.trim()}
+                    isDisabled={qLoading || !voiceAnswer.trim()}
                     flex={1}
                     h="14"
                   >
                     Submit Answer
                   </Button>
+                </HStack>
+                <HStack spacing={4} mt={4}>
+                  {question.number === question.total ? (
+                    <Button colorScheme="green" onClick={onConfirmOpen} w="full" size="lg" h="14" isDisabled={loading || qLoading}>
+                      Submit Test
+                    </Button>
+                  ) : (
+                    <Button variant="outline" colorScheme="cyan" onClick={handleNext} w="full" size="lg" h="14" isDisabled={loading || qLoading}>
+                      Next Question
+                    </Button>
+                  )}
                 </HStack>
               </VStack>
             </form>
@@ -633,34 +671,19 @@ export default function Test() {
         </TabPanels>
       </Tabs>
 
-      {evalResult && (
-        <VStack mt={6} spacing={4} align="stretch" animation="fadeIn 0.5s">
-          <Alert status={evalResult.score === 1 ? "success" : "warning"} borderRadius="xl" bg={evalResult.score === 1 ? "green.900" : "orange.900"} color="white">
-            <AlertIcon />
-            <Box>
-              <AlertTitle>Candidate Feedback</AlertTitle>
-              <AlertDescription>
-                <HStack spacing={4} mt={1}>
-                  <Text><strong>Relevancy:</strong> {evalResult.relevancy}%</Text>
-                  <Text><strong>Status:</strong> {evalResult.correctness ? "Passed" : "Needs Improvement"}</Text>
-                </HStack>
-                <Text mt={2} color="gray.300" fontSize="sm">{evalResult.aiText}</Text>
-              </AlertDescription>
-            </Box>
-          </Alert>
-          <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end" size="lg" px={10} borderRadius="full" boxShadow="0 0 20px rgba(0, 255, 255, 0.2)">
-            {question.number === question.total ? "Submit Test" : "Next Question"}
-          </Button>
-        </VStack>
-      )}
-
-      {!evalResult && !qLoading && (
-        <HStack justify="flex-end" mt={4}>
-          <Button variant="ghost" color="gray.400" size="sm" onClick={handleNext} _hover={{ color: "white", bg: "rgba(255,255,255,0.05)" }}>
-            {question.number === question.total ? "Submit Test" : "Next Question"}
-          </Button>
-        </HStack>
-      )}
+      <Modal isOpen={isConfirmOpen} onClose={onConfirmClose} isCentered>
+        <ModalOverlay backdropFilter="blur(10px)" />
+        <ModalContent bg="gray.800" border="1px solid rgba(255,255,255,0.1)">
+          <ModalHeader>Submit Test?</ModalHeader>
+          <ModalBody>
+            <Text color="gray.300">Are you sure you want to submit your final assessment? You won't be able to change your answers.</Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onConfirmClose}>No</Button>
+            <Button colorScheme="cyan" onClick={handleNext} isLoading={loading}>Submit Test</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
