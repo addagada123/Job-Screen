@@ -146,6 +146,7 @@
 			return res.status(400).json({ error: 'Missing email or password' });
 		}
 		try {
+			const user = await usersCollection.findOne({ email, password });
 			if (!user) {
 				return res.status(401).json({ error: 'Invalid credentials' });
 			}
