@@ -66,7 +66,7 @@ async function multiModalAsk(prompt, language = "English") {
     { name: "openai", fn: askOpenAI },
     { name: "gemini", fn: askGemini },
     { name: "deepseek", fn: askDeepSeek }
-  ];
+  ].sort(() => Math.random() - 0.5);
 
   let lastError = null;
   for (const model of models) {
@@ -113,6 +113,10 @@ Respond ONLY with valid JSON exactly like this:
 }
 Do not include any other text or markdown block markers.`;
     }
+
+    // Add random salt to forcing AI variety
+    const randomSalt = Math.random().toString(36).substring(7);
+    usedPrompt += `\nUniqueness Seed: ${randomSalt}`;
 
     // Use multiModalAsk for implicit fallback
     aiText = await multiModalAsk(usedPrompt, language);
