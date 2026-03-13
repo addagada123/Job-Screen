@@ -30,7 +30,7 @@ async function askOpenAI(prompt, language = "English") {
 // --- Helper: Gemini ---
 async function askGemini(prompt, language = "English") {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const result = await model.generateContent([
     { role: "user", parts: [{ text: `Respond in ${language}. ${prompt}` }] }
   ]);

@@ -1,10 +1,11 @@
-import { Box, Heading, Text, Button, VStack, HStack, Icon } from "@chakra-ui/react";
+import { Box, Heading, Text, Button, VStack, HStack } from "@chakra-ui/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../utils/auth";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
 
+// Explicitly use motion.create() for Chakra components as per Framer Motion v12+ requirements
 const MotionBox = motion.create(Box);
 const MotionHeading = motion.create(Heading);
 const MotionText = motion.create(Text);
@@ -40,6 +41,7 @@ export default function Landing() {
       navigate("/dashboard");
     }
   }, [navigate]);
+
   return (
     <Box
       minH="100vh"
@@ -49,6 +51,8 @@ export default function Landing() {
       alignItems="center"
       justifyContent="center"
       pb={20}
+      bg="#0a0a0f"
+      overflow="hidden"
     >
       {/* Animated Background */}
       <Box
@@ -58,7 +62,6 @@ export default function Landing() {
         right={0}
         bottom={0}
         zIndex={0}
-        overflow="hidden"
       >
         {/* Gradient Base */}
         <Box
@@ -145,17 +148,6 @@ export default function Landing() {
           backgroundImage="linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)"
           backgroundSize="60px 60px"
         />
-        
-        {/* Noise Texture */}
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          opacity={0.02}
-          backgroundImage="url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E')"
-        />
       </Box>
 
       {/* Main Content */}
@@ -205,6 +197,7 @@ export default function Landing() {
           fontWeight="700"
           lineHeight="1.1"
           maxW="800px"
+          color="white"
         >
           Smart Screening for{" "}
           <Text
@@ -370,4 +363,3 @@ export default function Landing() {
     </Box>
   );
 }
-
