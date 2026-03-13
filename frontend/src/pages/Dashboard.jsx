@@ -12,7 +12,7 @@ import { getCurrentUser } from "../utils/auth";
 import { getAdminUsers, getAdminRequests, getResume } from "../api";
 import { motion } from "framer-motion";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
   if (user?.isAdmin) {

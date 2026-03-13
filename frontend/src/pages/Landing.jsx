@@ -5,10 +5,10 @@ import { getCurrentUser } from "../utils/auth";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
 
-const MotionBox = motion(Box);
-const MotionHeading = motion(Heading);
-const MotionText = motion(Text);
-const MotionButton = motion(Button);
+const MotionBox = motion.create(Box);
+const MotionHeading = motion.create(Heading);
+const MotionText = motion.create(Text);
+const MotionButton = motion.create(Button);
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }

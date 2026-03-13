@@ -1,4 +1,10 @@
 (function () {
+    process.on('uncaughtException', (err) => {
+        console.error('CRITICAL: Uncaught Exception:', err);
+    });
+    process.on('unhandledRejection', (reason, promise) => {
+        console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+    });
 	const express = require('express');
 	const cors = require('cors');
 	const dotenv = require('dotenv');
@@ -21,8 +27,11 @@
 		origin: [
 			'https://job-screen-frontend.onrender.com',
 			'http://localhost:5173',
+			'http://localhost:5000',
 			'http://localhost:3300',
-			'http://localhost:3000'
+			'http://localhost:3000',
+			'http://127.0.0.1:5173',
+			'http://127.0.0.1:5000'
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -434,9 +443,14 @@
 		}
 	});
 
-	// Mount AI router
-	const aiRouter = require('./ai');
-	app.use('/api', aiRouter);
+	// Mount AI router with safety
+    try {
+	    const aiRouter = require('./ai');
+	    app.use('/api', aiRouter);
+        console.log('AI Router mounted successfully');
+    } catch (err) {
+        console.error('FAILED to mount AI Router:', err.message);
+    }
 
 	// Serve static files from the frontend/dist directory
 	const frontendDistPath = path.join(__dirname, '../frontend/dist');

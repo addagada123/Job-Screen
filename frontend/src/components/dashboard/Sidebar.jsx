@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../utils/auth";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   const location = useLocation();

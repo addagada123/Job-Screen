@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import GoogleAuthButton from "./GoogleAuthButton";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 export default function AuthForm({ type = "login", onSubmit }) {
   const [showPassword, setShowPassword] = useState(false);
