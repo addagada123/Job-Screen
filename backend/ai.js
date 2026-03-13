@@ -91,11 +91,11 @@ router.post('/evaluate', async (req, res) => {
     // If generating a question
     if (type === "question") {
       if (skills.length > 0) {
-        usedPrompt = `You are a professional technical interviewer. Generate a single highly specific interview question relevant STRICTLY to these skills: ${skills.join(", ")}. 
-        IMPORTANT: The question MUST be about one or more of these skills only. Do not ask general behavioral questions.
+        usedPrompt = `You are a professional technical interviewer for blue-collar and skilled trades. Generate a single highly specific interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
+        IMPORTANT: The question must be a technical or situational challenge about one of these specific trades/skills. Avoid generic behavioral questions like "Where do you see yourself in 5 years?".
         Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
       } else {
-        usedPrompt = `Generate a single professional interview question. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional interviewer for skilled labor. Generate a single professional technical interview question for a blue-collar role. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
       }
     }
     // If evaluating, include language and context

@@ -3,14 +3,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
 export const staticQuestions = [
-  { text: "What is the purpose of a P-trap?", category: "Plumbing" },
-  { text: "Explain the difference between AC and DC current.", category: "Electrical" },
-  { text: "How do you calculate the area of a triangle?", category: "Math" },
-  { text: "Describe the process of photosynthesis.", category: "Biology" },
-  { text: "What is the capital of France?", category: "Geography" },
-  { text: "What are the core principles of Object-Oriented Programming?", category: "Software Engineering" },
-  { text: "How do you handle conflict in a team environment?", category: "Soft Skills" },
-  { text: "What is the difference between a join and a subquery in SQL?", category: "Databases" }
+  { text: "What is the primary function of a P-trap in a drainage system?", category: "Plumbing" },
+  { text: "Can you explain the safety difference between a circuit breaker and a fuse?", category: "Electrical" },
+  { text: "What are the key safety checks you perform before operating a forklift?", category: "Safety / Logistics" },
+  { text: "How do you ensure a surface is level before starting masonry or tiling work?", category: "Construction" },
+  { text: "What is the most important rule to follow when driving a heavy vehicle in rainy conditions?", category: "Driving / Logistics" },
+  { text: "How do you identify a gas leak in a residential piping system?", category: "Plumbing / Safety" },
+  { text: "Describe the proper way to lift heavy objects to avoid back injury.", category: "Workplace Safety" },
+  { text: "What tools would you use to measure the thickness of a metal plate for welding?", category: "Welding / Metalwork" }
 ];
 
 export async function generateQuestion(model = "openai", skills = [], language = "English") {

@@ -19,7 +19,7 @@ export default function Test() {
     category: "",
     number: 1,
     total: 10,
-    time: 20,
+    time: 90,
     switches: 0,
     maxSwitches: 4
   });
@@ -35,8 +35,8 @@ export default function Test() {
   const [isMuted, setIsMuted] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
   const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
-  const [questionTimeLeft, setQuestionTimeLeft] = useState(20);
-  const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(90);
+  const [totalTimeLeft, setTotalTimeLeft] = useState(900);
   const [adminNotification, setAdminNotification] = useState("");
   const timerIntervalRef = useRef(null);
   const toast = useToast();
@@ -309,7 +309,7 @@ export default function Test() {
       return;
     }
     setQuestion(q0 => ({ ...q0, number: q0.number + 1 }));
-    setQuestionTimeLeft(20);
+    setQuestionTimeLeft(90);
     await loadQuestion();
   };
 
@@ -475,7 +475,7 @@ export default function Test() {
               </ListItem>
               <ListItem color="gray.300">
                 <ListIcon as={FaCheckCircle} color="green.400" />
-                You will have <strong>20 seconds</strong> to answer each question.
+                You will have <strong>90 seconds</strong> to answer each question.
               </ListItem>
               <ListItem color="gray.300">
                 <ListIcon as={FaCheckCircle} color="green.400" />

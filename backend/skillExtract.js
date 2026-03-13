@@ -1,15 +1,8 @@
 const SKILLS = [
-  "plumbing",
-  "pipe fitting",
-  "electrician",
-  "carpentry",
-  "masonry",
-  "welding",
-  "driver",
-  "forklift",
-  "construction",
-  "tiling",
-  "roofing"
+  "plumbing", "pipe fitting", "electrician", "carpentry", "masonry", "welding", 
+  "driver", "forklift", "construction", "tiling", "roofing", "maintenance", 
+  "technician", "mechanic", "warehouse", "delivery", "inventory", "cleaning", 
+  "security", "guard", "cook", "chef", "painting", "hvac", "automotive"
 ];
 
 function extractSkills(text) {
