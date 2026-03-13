@@ -31,9 +31,7 @@ async function askOpenAI(prompt, language = "English") {
 async function askGemini(prompt, language = "English") {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const result = await model.generateContent([
-    { role: "user", parts: [{ text: `Respond in ${language}. ${prompt}` }] }
-  ]);
+  const result = await model.generateContent(`Respond in ${language}. ${prompt}`);
   return result.response.text();
 }
 
@@ -61,13 +59,20 @@ async function askDeepSeek(prompt, language = "English") {
 }
 
 // --- Multi-Modal Orchestrator with Fallback ---
-async function multiModalAsk(prompt, language = "English") {
-  const models = [
+async function multiModalAsk(prompt, language = "English", forcedModel = null) {
+  let models = [
     { name: "openai", fn: askOpenAI },
     { name: "gemini", fn: askGemini },
     { name: "deepseek", fn: askDeepSeek }
-  ].sort(() => Math.random() - 0.5);
+  ];
 
+  if (forcedModel && models.find(m => m.name === forcedModel)) {
+    console.log(`Forced model requested: ${forcedModel}`);
+    const model = models.find(m => m.name === forcedModel);
+    return await model.fn(prompt, language);
+  }
+
+  models.sort(() => Math.random() - 0.5);
   let lastError = null;
   for (const model of models) {
     try {
@@ -119,8 +124,8 @@ Do not include any other text or markdown block markers.`;
     const randomSalt = Math.random().toString(36).substring(7);
     usedPrompt += `\nUniqueness Seed: ${randomSalt}`;
 
-    // Use multiModalAsk for implicit fallback
-    aiText = await multiModalAsk(usedPrompt, language);
+    // Use multiModalAsk for implicit fallback (or forced model if provided)
+    aiText = await multiModalAsk(usedPrompt, language, model);
 
     // Clean any potential markdowns from aiText payload
     let cleanAiText = aiText.trim();
