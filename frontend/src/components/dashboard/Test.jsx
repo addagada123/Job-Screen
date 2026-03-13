@@ -4,6 +4,7 @@ import { evaluateAnswer, updateUserScore, markTestTaken } from "../../api";
 import { generateQuestion } from "../../api.question";
 import { FaMicrophone, FaStop, FaCheckCircle, FaCamera, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import InterviewerAvatar from "./InterviewerAvatar";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
@@ -32,6 +33,7 @@ export default function Test() {
   const [forceExit, setForceExit] = useState(false);
   const [testCompleted, setTestCompleted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
   const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
   const [questionTimeLeft, setQuestionTimeLeft] = useState(60);
   const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
@@ -226,6 +228,10 @@ export default function Test() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     
+    utterance.onstart = () => setIsTalking(true);
+    utterance.onend = () => setIsTalking(false);
+    utterance.onerror = () => setIsTalking(false);
+
     // Attempt to match the voice to the selected language
     const voices = window.speechSynthesis.getVoices();
     let langCode = 'en-US';
@@ -571,6 +577,10 @@ export default function Test() {
           </Text>
         </VStack>
       </HStack>
+
+      <Box mb={6} display="flex" justifyContent="center">
+        <InterviewerAvatar isTalking={isTalking} isListening={isRecording} size={150} />
+      </Box>
 
       <Box bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} mb={6} boxShadow="xl" border="1px solid rgba(0,255,255,0.1)">
         <HStack justify="space-between" align="start">
