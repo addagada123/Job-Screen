@@ -35,7 +35,7 @@ export default function Test() {
   const [isMuted, setIsMuted] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
   const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
-  const [questionTimeLeft, setQuestionTimeLeft] = useState(60);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(20);
   const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
   const [adminNotification, setAdminNotification] = useState("");
   const timerIntervalRef = useRef(null);
@@ -309,7 +309,7 @@ export default function Test() {
       return;
     }
     setQuestion(q0 => ({ ...q0, number: q0.number + 1 }));
-    setQuestionTimeLeft(60);
+    setQuestionTimeLeft(20);
     await loadQuestion();
   };
 
