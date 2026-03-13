@@ -147,6 +147,15 @@ export default function Test() {
     }
   }, [totalTimeLeft]);
 
+  useEffect(() => {
+    if (testCompleted) {
+      const timer = setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [testCompleted, navigate]);
+
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -321,8 +330,9 @@ export default function Test() {
         <Text color="gray.400" fontSize="lg" mb={8}>
           Your assessment has been recorded successfully. Our team will review your results.
         </Text>
+        <Text color="cyan.300" fontSize="sm" mb={4}>Redirecting to dashboard in 3 seconds...</Text>
         <Button size="lg" colorScheme="cyan" onClick={() => navigate("/dashboard")} px={10}>
-          Go to Dashboard
+          Go to Dashboard Now
         </Button>
       </Box>
     );
