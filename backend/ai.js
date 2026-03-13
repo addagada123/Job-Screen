@@ -91,11 +91,11 @@ router.post('/evaluate', async (req, res) => {
     // If generating a question
     if (type === "question") {
       if (skills.length > 0) {
-        usedPrompt = `You are a professional technical interviewer for blue-collar and skilled trades. Generate a single highly specific interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
-        IMPORTANT: The question must be a technical or situational challenge about one of these specific trades/skills. Avoid generic behavioral questions like "Where do you see yourself in 5 years?".
-        Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional technical interviewer for blue-collar and skilled trades. Generate a single HIGHLY TECHNICAL or SITUATIONAL trade interview question relevant STRICTLY and ONLY to these candidate skills: ${skills.join(", ")}. 
+        IMPORTANT: The question must be a technical challenge (e.g. tool usage, safety protocol, troubleshooting) about one of these specific trades/skills. Do NOT ask generic behavioral questions (like "describe yourself"). 
+        Respond ONLY with valid JSON exactly like this: {"text": "specific technical question", "category": "specific category"}. Do not include markdown formatting.`;
       } else {
-        usedPrompt = `You are a professional interviewer for skilled labor. Generate a single professional technical interview question for a blue-collar role. Respond ONLY with valid JSON exactly like this: {"text": "question string", "category": "category string"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional technical interviewer for skilled labor. Generate a single highly technical situational interview question for a blue-collar role. Respond ONLY with valid JSON exactly like this: {"text": "technical question", "category": "specific category"}. Do not include markdown formatting.`;
       }
     }
     // If evaluating, include language and context

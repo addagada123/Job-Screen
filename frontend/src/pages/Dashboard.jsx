@@ -145,7 +145,7 @@ function Overview({ user, resumeUploaded, testTaken }) {
         ) : !testTaken ? (
           <VStack spacing={4}>
             <Text fontSize="lg" fontWeight="600">Step 2: Take the AI Screening Test</Text>
-            <Text color="gray.400" textAlign="center">A 15-question voice & text assessment tailored to your skills.</Text>
+            <Text color="gray.400" textAlign="center">A 10-question voice & text assessment (90s per question) tailored to your skills.</Text>
             <Button colorScheme="green" size="lg" px={10} onClick={() => window.location.href="/dashboard"}>Go to Test Portal</Button>
           </VStack>
         ) : (
