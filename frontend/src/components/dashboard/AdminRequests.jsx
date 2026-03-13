@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, Text, useToast } from "@chakra-ui/react";
+import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, Text, useToast, HStack } from "@chakra-ui/react";
 import { getAdminRequests, approveAdminRequest } from "../../api";
 
 export default function AdminRequests() {
