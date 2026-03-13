@@ -90,6 +90,11 @@
 				user = await usersCollection.findOne({ email });
 			}
 
+			// Check if user is pending admin
+			if (user.role === 'pending_admin') {
+				return res.status(403).json({ error: 'Your admin access request is pending approval.' });
+			}
+
 			// Return user info
 			res.json({
 				success: true,
@@ -141,9 +146,11 @@
 			return res.status(400).json({ error: 'Missing email or password' });
 		}
 		try {
-			const user = await usersCollection.findOne({ email, password });
 			if (!user) {
 				return res.status(401).json({ error: 'Invalid credentials' });
+			}
+			if (user.role === 'pending_admin') {
+				return res.status(403).json({ error: 'Your admin access request is pending approval.' });
 			}
 			res.json({
 				id: user._id.toString(),
