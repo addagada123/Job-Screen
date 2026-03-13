@@ -1,8 +1,8 @@
-import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon, Spinner, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, useDisclosure } from "@chakra-ui/react";
+import { Box, Heading, Text, Button, VStack, HStack, Tag, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea, useToast, Select, Alert, AlertIcon, AlertTitle, AlertDescription, Icon, List, ListItem, ListIcon, Spinner, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, useDisclosure, IconButton } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { evaluateAnswer, updateUserScore, markTestTaken } from "../../api";
 import { generateQuestion } from "../../api.question";
-import { FaMicrophone, FaStop, FaCheckCircle, FaCamera } from "react-icons/fa";
+import { FaMicrophone, FaStop, FaCheckCircle, FaCamera, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
@@ -31,6 +31,7 @@ export default function Test() {
   const [testBlocked, setTestBlocked] = useState(false);
   const [forceExit, setForceExit] = useState(false);
   const [testCompleted, setTestCompleted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
   const [questionTimeLeft, setQuestionTimeLeft] = useState(60);
   const [totalTimeLeft, setTotalTimeLeft] = useState(15 * 60);
@@ -218,6 +219,32 @@ export default function Test() {
       setQLoading(false);
     }
   }
+
+  // Text-to-Speech logic
+  const speakQuestion = (text) => {
+    if (isMuted) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Attempt to match the voice to the selected language
+    const voices = window.speechSynthesis.getVoices();
+    let langCode = 'en-US';
+    if (selectedLanguage === 'Hindi') langCode = 'hi-IN';
+    else if (selectedLanguage === 'Telugu') langCode = 'te-IN';
+    else if (selectedLanguage === 'Tamil') langCode = 'ta-IN';
+    else if (selectedLanguage === 'Spanish') langCode = 'es-ES';
+    else if (selectedLanguage === 'French') langCode = 'fr-FR';
+    
+    utterance.lang = langCode;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    if (testStarted && question.text && !qLoading && !testCompleted && !forceExit && !testBlocked) {
+      speakQuestion(question.text);
+    }
+    return () => window.speechSynthesis.cancel();
+  }, [question.text, testStarted, qLoading, isMuted, testCompleted, forceExit, testBlocked]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -546,10 +573,23 @@ export default function Test() {
       </HStack>
 
       <Box bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} mb={6} boxShadow="xl" border="1px solid rgba(0,255,255,0.1)">
-        <Heading size="lg" mb={2} lineHeight="1.4">
-          {qLoading ? <Spinner size="sm" mr={2} /> : null}
-          {qLoading ? "AI is generating your question..." : question.text}
-        </Heading>
+        <HStack justify="space-between" align="start">
+          <Heading size="lg" mb={2} lineHeight="1.4" flex="1">
+            {qLoading ? <Spinner size="sm" mr={2} /> : null}
+            {qLoading ? "AI is generating your question..." : question.text}
+          </Heading>
+          {!qLoading && (
+            <IconButton
+              icon={<Icon as={isMuted ? FaVolumeMute : FaVolumeUp} />}
+              onClick={() => setIsMuted(!isMuted)}
+              variant="ghost"
+              colorScheme="cyan"
+              aria-label={isMuted ? "Unmute question" : "Mute question"}
+              size="md"
+              _hover={{ bg: "rgba(255,255,255,0.1)" }}
+            />
+          )}
+        </HStack>
         {!qLoading && <Tag colorScheme="cyan" mt={2} variant="subtle">{question.category}</Tag>}
       </Box>
 
