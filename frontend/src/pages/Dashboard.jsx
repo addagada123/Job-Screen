@@ -226,7 +226,11 @@ export default function Dashboard({ hideSidebar }) {
       }).catch(() => {});
     }
     setTestTaken(u && u.testTaken);
-  }, [navigate]);
+    // Explicit sync if we have a user but status might be stale
+    if (u && u.testTaken === undefined) {
+      // (Optionally fetch from an API if needed, but for now we rely on the updated login response)
+    }
+  }, [navigate, location.pathname]);
 
   if (!user) {
     return (

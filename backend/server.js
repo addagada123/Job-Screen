@@ -101,6 +101,7 @@
 					picture: user.picture,
 					role: user.role,
 					score: user.score,
+					testTaken: user.testTaken || false,
 					isAdmin: user.role === 'admin'
 				},
 			});
@@ -151,6 +152,7 @@
 				firstName: user.firstName,
 				role: user.role,
 				score: user.score,
+				testTaken: user.testTaken || false,
 				isAdmin: user.role === 'admin'
 			});
 		} catch (err) {
