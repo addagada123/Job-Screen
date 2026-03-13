@@ -488,28 +488,12 @@ export default function Test() {
             </List>
           </Box>
 
-          <HStack spacing={6} align="start" justify="center">
-            <Box flex={1} maxW="300px">
-              <Text fontSize="sm" mb={2} fontWeight="bold" color="gray.400">ANSWERING LANGUAGE</Text>
-              <Select 
-                value={selectedLanguage} 
-                onChange={e => {
-                  setSelectedLanguage(e.target.value);
-                  localStorage.setItem("selectedLanguage", e.target.value);
-                }}
-                bg="gray.800"
-                borderColor="rgba(255,255,255,0.1)"
-                _hover={{ borderColor: "cyan.400" }}
-              >
-                <option value="English">English</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-              </Select>
-            </Box>
-          </HStack>
+          <Box bg="rgba(0,0,0,0.2)" p={4} borderRadius="lg" textAlign="center">
+            <Text color="gray.400" fontSize="sm">
+              <Icon as={FaVolumeUp} mr={2} />
+              Default language: <strong>English</strong>. You can switch to Hindi, Telugu, Tamil, etc. anytime during the test.
+            </Text>
+          </Box>
 
           <Box>
              <Alert status="warning" borderRadius="md" mb={6} bg="orange.900" color="orange.100">
