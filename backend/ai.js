@@ -73,9 +73,10 @@ async function multiModalAsk(prompt, language = "English") {
     try {
       console.log(`Attempting AI request with: ${model.name}`);
       const result = await model.fn(prompt, language);
+      console.log(`AI Success for ${model.name}:`, result.substring(0, 50) + "...");
       return result;
     } catch (err) {
-      console.warn(`${model.name} failed: ${err.message}. Falling back...`);
+      console.error(`AI Error for ${model.name}:`, err.message);
       lastError = err;
     }
   }
@@ -150,6 +151,7 @@ Do not include any other text or markdown block markers.`;
       });
     } else {
       // Return generated question JSON
+      console.log("Success: Returning generated question to client.");
       res.json(parsedResult);
     }
 

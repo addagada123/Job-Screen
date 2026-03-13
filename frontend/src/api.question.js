@@ -91,7 +91,8 @@ export async function generateQuestion(model = "openai", skills = [], language =
     
     throw new Error("AI did not return valid question");
   } catch (err) {
-    console.warn("AI generation failed, using skill-based fallback:", err.message);
+    console.error("AI Generation ERROR:", err.message);
+    console.warn("Falling back to trade-specific static question bank.");
     
     // Skill-based fallback logic
     if (skills && skills.length > 0) {
