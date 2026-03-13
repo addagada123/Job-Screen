@@ -61,12 +61,15 @@ export default function Sidebar({ user }) {
     return () => window.removeEventListener("storage", handler);
   }, []);
 
-  const handleTestClick = () => {
-    if (!resumeUploaded) {
+  const handleTestClick = (e) => {
+    const isResumeUploaded = !!localStorage.getItem("resumeUploaded");
+    if (!isResumeUploaded) {
+      if (e) e.preventDefault();
       toast({ title: "Please upload your resume first.", status: "warning" });
       return;
     }
     if (user && user.testTaken) {
+      if (e) e.preventDefault();
       toast({
         title: "Test already taken",
         description: "You have already completed the assessment.",

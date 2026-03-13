@@ -624,7 +624,7 @@ export default function Test() {
                     flex={1}
                     h="14"
                   >
-                    Submit Voice Answer
+                    Submit Answer
                   </Button>
                 </HStack>
               </VStack>
@@ -649,7 +649,7 @@ export default function Test() {
             </Box>
           </Alert>
           <Button colorScheme="cyan" onClick={handleNext} alignSelf="flex-end" size="lg" px={10} borderRadius="full" boxShadow="0 0 20px rgba(0, 255, 255, 0.2)">
-            {question.number === question.total ? "Submit Final Assessment" : "Move to Next Question"}
+            {question.number === question.total ? "Submit Test" : "Next Question"}
           </Button>
         </VStack>
       )}
@@ -657,7 +657,7 @@ export default function Test() {
       {!evalResult && !qLoading && (
         <HStack justify="flex-end" mt={4}>
           <Button variant="ghost" color="gray.400" size="sm" onClick={handleNext} _hover={{ color: "white", bg: "rgba(255,255,255,0.05)" }}>
-            Skip to {question.number === question.total ? "Finish" : "Next"}
+            {question.number === question.total ? "Submit Test" : "Next Question"}
           </Button>
         </HStack>
       )}
