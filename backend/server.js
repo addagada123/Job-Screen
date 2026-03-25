@@ -17,7 +17,10 @@
 	// CORS configuration - allow Vercel frontend and localhost
 	const corsOptions = {
 		origin: [
-			'https://job-screen-frontend.onrender.com'
+			'https://job-screen-frontend.onrender.com',
+			'http://localhost:5173',
+			'http://localhost:3300',
+			'http://127.0.0.1:5173',
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
