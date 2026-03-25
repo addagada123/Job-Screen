@@ -1,18 +1,10 @@
 (function () {
-    process.on('uncaughtException', (err) => {
-        console.error('CRITICAL: Uncaught Exception:', err);
-    });
-    process.on('unhandledRejection', (reason, promise) => {
-        console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
-    });
 	const express = require('express');
 	const cors = require('cors');
 	const dotenv = require('dotenv');
 	const { OAuth2Client } = require('google-auth-library');
 	const { MongoClient, ObjectId } = require('mongodb');
 	const multer = require('multer');
-	const path = require('path');
-	const fs = require('fs');
 	const parseResume = require('./resumeParser');
 	const extractSkills = require('./skillExtract');
 	// const { openai } = require('./ai'); // Uncomment and configure for AI job matching
@@ -22,16 +14,10 @@
 	const app = express();
 
 
-	// CORS configuration - allow frontend and localhost
+	// CORS configuration - allow Vercel frontend and localhost
 	const corsOptions = {
 		origin: [
-			'https://job-screen-frontend.onrender.com',
-			'http://localhost:5173',
-			'http://localhost:5000',
-			'http://localhost:3300',
-			'http://localhost:3000',
-			'http://127.0.0.1:5173',
-			'http://127.0.0.1:5000'
+			'https://job-screen-frontend.onrender.com'
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -46,7 +32,7 @@
 	// MongoDB setup
 	const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://Bhanuteja:Addagada%40123@cluster0.xdcsxyh.mongodb.net/?appName=Cluster0';
 	const mongoClient = new MongoClient(mongoUri);
-	let db, usersCollection, scoresCollection;
+	let db, usersCollection, scoresCollection, retakeRequestsCollection;
 
 	async function connectDb() {
 		try {
@@ -54,6 +40,7 @@
 			db = mongoClient.db('jobscreen');
 			usersCollection = db.collection('users');
 			scoresCollection = db.collection('scores');
+			retakeRequestsCollection = db.collection('retakeRequests');
 			
 			// Create indexes
 			await usersCollection.createIndex({ email: 1 }, { unique: true });
@@ -99,11 +86,6 @@
 				user = await usersCollection.findOne({ email });
 			}
 
-			// Check if user is pending admin
-			if (user.role === 'pending_admin') {
-				return res.status(403).json({ error: 'Your admin access request is pending approval.' });
-			}
-
 			// Return user info
 			res.json({
 				success: true,
@@ -115,7 +97,6 @@
 					picture: user.picture,
 					role: user.role,
 					score: user.score,
-					testTaken: user.testTaken || false,
 					isAdmin: user.role === 'admin'
 				},
 			});
@@ -159,9 +140,6 @@
 			if (!user) {
 				return res.status(401).json({ error: 'Invalid credentials' });
 			}
-			if (user.role === 'pending_admin') {
-				return res.status(403).json({ error: 'Your admin access request is pending approval.' });
-			}
 			res.json({
 				id: user._id.toString(),
 				email: user.email,
@@ -169,7 +147,6 @@
 				firstName: user.firstName,
 				role: user.role,
 				score: user.score,
-				testTaken: user.testTaken || false,
 				isAdmin: user.role === 'admin'
 			});
 		} catch (err) {
@@ -227,92 +204,16 @@
 		}
 	});
 
-	// Get all scores (admin) — join with usersCollection for name + selection
+	// Get all scores (admin)
 	app.get('/api/scores', async (req, res) => {
 		try {
 			const scores = await scoresCollection.find({}).toArray();
-			// Enrich each score record with user name and selection
-			const enriched = await Promise.all(scores.map(async (s) => {
-				const user = await usersCollection.findOne({ email: s.email });
-				return {
-					...s,
-					name: user ? user.name : null,
-					selection: user ? user.selection : null
-				};
-			}));
-			res.json(enriched);
+			res.json(scores);
 		} catch (err) {
 			res.status(500).json({ error: 'Failed to fetch scores', details: err.message });
 		}
 	});
 
-	// Mark test as taken
-	app.post('/api/mark-test-taken', async (req, res) => {
-		const { email } = req.body;
-		if (!email) return res.status(400).json({ error: 'Missing email' });
-		try {
-			const result = await usersCollection.updateOne(
-				{ email },
-				{ $set: { testTaken: true } }
-			);
-			if (result.matchedCount === 0) return res.status(404).json({ error: 'User not found' });
-			res.json({ success: true });
-		} catch (err) {
-			res.status(500).json({ error: 'Failed to mark test taken', details: err.message });
-		}
-	});
-
-	// Get all users for admin (includes testTaken + selection)
-	app.get('/api/admin/users', async (req, res) => {
-		try {
-			const users = await usersCollection.find({}).toArray();
-			res.json(users.map(u => ({
-				id: u._id.toString(),
-				email: u.email,
-				name: u.name,
-				role: u.role,
-				score: u.score,
-				testTaken: u.testTaken || false,
-				selection: u.selection || null,
-				isAdmin: u.role === 'admin'
-			})));
-		} catch (err) {
-			res.status(500).json({ error: 'Failed to fetch users', details: err.message });
-		}
-	});
-
-	// Get pending admin requests
-	app.get('/api/admin/requests', async (req, res) => {
-		try {
-			const requests = await usersCollection.find({ role: 'pending_admin' }).toArray();
-			res.json(requests.map(u => ({
-				id: u._id.toString(),
-				email: u.email,
-				name: u.name
-			})));
-		} catch (err) {
-			res.status(500).json({ error: 'Failed to fetch requests', details: err.message });
-		}
-	});
-
-	// Approve or reject admin request
-	app.post('/api/admin/approve', async (req, res) => {
-		const { email, approve } = req.body;
-		if (!email || typeof approve !== 'boolean') {
-			return res.status(400).json({ error: 'Missing or invalid email/approve' });
-		}
-		try {
-			const newRole = approve ? 'admin' : 'candidate';
-			const result = await usersCollection.updateOne(
-				{ email },
-				{ $set: { role: newRole } }
-			);
-			if (result.matchedCount === 0) return res.status(404).json({ error: 'User not found' });
-			res.json({ success: true, role: newRole });
-		} catch (err) {
-			res.status(500).json({ error: 'Failed to update role', details: err.message });
-		}
-	});
 
 	// New upload-resume endpoint (file upload)
 	app.post('/upload-resume', upload.single('resume'), async (req, res) => {
@@ -321,22 +222,21 @@
 				return res.status(400).json({ error: 'No file uploaded' });
 			}
 			const text = await parseResume(req.file);
-			const { email } = req.body;
 			// Skill extraction
 			const skills = extractSkills(text);
-
-			// Persist resume text to MongoDB if email is provided
-			if (email) {
-				await usersCollection.updateOne(
-					{ email },
-					{ $set: { resume: text, skills: skills } }
-				);
-			}
-
+			// AI job matching placeholder (uncomment and implement as needed)
+			// const response = await openai.chat.completions.create({
+			//   model: "gpt-4o-mini",
+			//   messages: [
+			//     { role: "user", content: `Extract job type and experience from this resume:\n${text}` }
+			//   ]
+			// });
+			// const aiResult = response.choices[0].message.content;
 			res.json({
 				success: true,
 				resumeText: text,
 				skills,
+				// aiResult
 			});
 		} catch (err) {
 			res.status(500).json({ error: err.message });
@@ -443,37 +343,83 @@
 		}
 	});
 
-	// Mount AI router with safety
-    try {
-	    const aiRouter = require('./ai');
-	    app.use('/api', aiRouter);
-        console.log('AI Router mounted successfully');
-    } catch (err) {
-        console.error('FAILED to mount AI Router:', err.message);
-    }
+	// Retake test request endpoints
+	app.post('/api/retake-request', async (req, res) => {
+		const { email, reason } = req.body;
+		if (!email || !reason?.trim() || reason.length < 10) return res.status(400).json({ error: 'Valid email and reason (min 10 chars) required' });
+		try {
+			const user = await usersCollection.findOne({ email });
+			if (!user) return res.status(404).json({ error: 'User not found' });
+			if (!user.testTaken) return res.status(400).json({ error: 'Test not completed yet' });
+			
+			const newRequest = {
+				email: user.email,
+				name: user.name,
+				reason: reason.trim(),
+				status: 'pending',
+				createdAt: new Date()
+			};
+			await retakeRequestsCollection.insertOne(newRequest);
+			res.json({ success: true, message: 'Retake request submitted successfully' });
+		} catch (err) {
+			console.error('Retake request error:', err);
+			res.status(500).json({ error: 'Failed to submit request' });
+		}
+	});
 
-	// Serve static files from the frontend/dist directory
-	const frontendDistPath = path.join(__dirname, '../frontend/dist');
-	
-	if (fs.existsSync(frontendDistPath)) {
-		console.log(`Serving static files from: ${frontendDistPath}`);
-		app.use(express.static(frontendDistPath));
-		
-		// Support React Client-Side Routing: fallback to index.html
-		app.get('*', (req, res) => {
-			const indexPath = path.join(frontendDistPath, 'index.html');
-			if (fs.existsSync(indexPath)) {
-				res.sendFile(indexPath);
-			} else {
-				res.status(404).send('Frontend built but index.html missing. Check build logs.');
-			}
-		});
-	} else {
-		console.warn(`Static files directory NOT found at: ${frontendDistPath}`);
-		app.get('/', (req, res) => {
-			res.status(200).send('API is running, but frontend build was not found. Please ensure "npm run build" was executed in the frontend folder.');
-		});
-	}
+	app.get('/api/admin/retake-requests', async (req, res) => {
+		try {
+			const requests = await retakeRequestsCollection.find({ status: 'pending' }).sort({ createdAt: -1 }).toArray();
+			res.json(requests.map(r => ({
+				_id: r._id.toString(),
+				email: r.email,
+				name: r.name,
+				reason: r.reason,
+				createdAt: r.createdAt
+			})));
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to fetch retake requests' });
+		}
+	});
+
+	app.post('/api/admin/retake/:id/accept', async (req, res) => {
+		try {
+			const { id } = req.params;
+			const request = await retakeRequestsCollection.findOne({ _id: new ObjectId(id), status: 'pending' });
+			if (!request) return res.status(404).json({ error: 'Request not found or already processed' });
+
+			// Update request status
+			await retakeRequestsCollection.updateOne({ _id: new ObjectId(id) }, { $set: { status: 'approved' } });
+			
+			// Enable retake for user
+			await usersCollection.updateOne(
+				{ email: request.email },
+				{ $set: { canRetake: true, testTaken: false } }
+			);
+			
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to approve retake' });
+		}
+	});
+
+	app.post('/api/admin/retake/:id/reject', async (req, res) => {
+		try {
+			const { id } = req.params;
+			const result = await retakeRequestsCollection.updateOne(
+				{ _id: new ObjectId(id), status: 'pending' },
+				{ $set: { status: 'rejected' } }
+			);
+			if (result.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to reject retake' });
+		}
+	});
+
+	// Mount AI router
+	const aiRouter = require('./ai');
+	app.use('/api', aiRouter);
 
 	// Start server
 	const PORT = process.env.PORT || 5000;

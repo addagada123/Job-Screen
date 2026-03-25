@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../utils/auth";
 
-const MotionBox = motion.create(Box);
+const MotionBox = motion(Box);
 
 const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   const location = useLocation();
@@ -61,22 +61,9 @@ export default function Sidebar({ user }) {
     return () => window.removeEventListener("storage", handler);
   }, []);
 
-  const handleTestClick = (e) => {
-    const isResumeUploaded = !!localStorage.getItem("resumeUploaded");
-    if (!isResumeUploaded) {
-      if (e) e.preventDefault();
+  const handleTestClick = () => {
+    if (!resumeUploaded) {
       toast({ title: "Please upload your resume first.", status: "warning" });
-      return;
-    }
-    if (user && user.testTaken) {
-      if (e) e.preventDefault();
-      toast({
-        title: "Test already taken",
-        description: "You have already completed the assessment.",
-        status: "info",
-        duration: 3000,
-        isClosable: true,
-      });
       return;
     }
     navigate("/dashboard/test");
@@ -123,7 +110,7 @@ export default function Sidebar({ user }) {
         pointerEvents="none"
       />
 
-      <VStack spacing={0} h="100%" py={6} pt={24} position="relative" zIndex={1}>
+      <VStack spacing={0} h="100%" py={6} position="relative" zIndex={1}>
         {/* User Profile */}
         <VStack spacing={3} mb={8} px={4} w="100%">
           <Box
@@ -183,18 +170,28 @@ export default function Sidebar({ user }) {
           >
             Menu
           </Text>
-          <NavItem to="/dashboard/overview">📊 Overview</NavItem>
-          {user?.isAdmin ? (
+          <NavItem to="overview">📊 Overview</NavItem>
+          <NavItem to="resume">📄 Resume</NavItem>
+          <NavItem to="test" onClick={handleTestClick}>🧪 Test</NavItem>
+          <NavItem to="results">📈 Results</NavItem>
+
+          {user?.isAdmin && (
             <>
-              <NavItem to="/dashboard/admin-requests">📋 Requests</NavItem>
-              <NavItem to="/dashboard/admin-users">👥 User Management</NavItem>
-              <NavItem to="/dashboard/results">📈 Results</NavItem>
-            </>
-          ) : (
-            <>
-              <NavItem to="/dashboard/results">📈 Results</NavItem>
-              <NavItem to="/dashboard/resume">📄 Resume</NavItem>
-              <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                mt={6}
+                mb={2}
+                px={4}
+              >
+                Admin
+              </Text>
+              <NavItem to="admin-scores" isAdmin>🏆 Scores</NavItem>
+              <NavItem to="admin-users" isAdmin>👥 Users</NavItem>
+              <NavItem to="admin-requests" isAdmin>📋 Requests</NavItem>
             </>
           )}
         </VStack>
