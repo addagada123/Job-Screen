@@ -1,195 +1,24 @@
-(function () {
-	const express = require('express');
-	const cors = require('cors');
-	const dotenv = require('dotenv');
-	const { OAuth2Client } = require('google-auth-library');
-	const { MongoClient, ObjectId } = require('mongodb');
-	const multer = require('multer');
-	const parseResume = require('./resumeParser');
-	const extractSkills = require('./skillExtract');
-	// const { openai } = require('./ai'); // Uncomment and configure for AI job matching
-	const upload = multer();
-	dotenv.config();
+require('dotenv').config();
 
-	const app = express();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const { OAuth2Client } = require('google-auth-library');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '406943845792-eiubf40t6lth2sk5fbtbllfia9buj26c.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-	// CORS configuration - allow Vercel frontend and localhost
-	const corsOptions = {
-		origin: [
-			'https://job-screen-frontend.onrender.com',
-			'http://localhost:5173',
-			'http://localhost:3300',
-			'http://127.0.0.1:5173',
-		],
-		credentials: true,
-		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-		allowedHeaders: ['Content-Type', 'Authorization']
-	};
-	app.use(cors(corsOptions));
-	app.use(express.json());
+const upload = multer({ dest: 'uploads/' });
 
-	// Google OAuth2 client
-	const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Default root endpoint
+app.get('/', (req, res) => {
+  res.send('Backend server is running.');
+});
 
-	// MongoDB setup
-	const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://Bhanuteja:Addagada%40123@cluster0.xdcsxyh.mongodb.net/?appName=Cluster0';
-	const mongoClient = new MongoClient(mongoUri);
-	let db, usersCollection, scoresCollection, retakeRequestsCollection;
-
-	async function connectDb() {
-		try {
-			await mongoClient.connect();
-			db = mongoClient.db('jobscreen');
-			usersCollection = db.collection('users');
-			scoresCollection = db.collection('scores');
-			retakeRequestsCollection = db.collection('retakeRequests');
-			
-			// Create indexes
-			await usersCollection.createIndex({ email: 1 }, { unique: true });
-			await scoresCollection.createIndex({ email: 1 });
-			
-			console.log('Connected to MongoDB');
-		} catch (err) {
-			console.error('MongoDB connection error:', err);
-		}
-	}
-	connectDb();
-
-	// Google Sign-In endpoint
-	app.post('/api/google-auth', async (req, res) => {
-		const { credential } = req.body;
-		if (!credential) {
-			return res.status(400).json({ error: 'Missing Google credential' });
-		}
-		try {
-			// Verify Google ID token
-			const ticket = await client.verifyIdToken({
-				idToken: credential,
-				audience: process.env.GOOGLE_CLIENT_ID,
-			});
-			const payload = ticket.getPayload();
-			const { sub, email, name, picture } = payload;
-			const firstName = name.split(' ')[0];
-
-			// Check if user exists, else create
-			let user = await usersCollection.findOne({ email });
-			if (!user) {
-				user = {
-					googleId: sub,
-					email,
-					name,
-					firstName,
-					picture,
-					role: 'candidate',
-					score: null,
-					createdAt: new Date()
-				};
-				await usersCollection.insertOne(user);
-				user = await usersCollection.findOne({ email });
-			}
-
-			// Return user info
-			res.json({
-				success: true,
-				user: {
-					id: user._id.toString(),
-					email: user.email,
-					name: user.name,
-					firstName: user.firstName,
-					picture: user.picture,
-					role: user.role,
-					score: user.score,
-					isAdmin: user.role === 'admin'
-				},
-			});
-		} catch (err) {
-			res.status(401).json({ error: 'Invalid Google credential', details: err.message });
-		}
-	});
-
-	// Endpoint to update user score
-	app.post('/api/update-score', async (req, res) => {
-		const { email, score } = req.body;
-		if (!email || typeof score !== 'number') {
-			return res.status(400).json({ error: 'Missing email or score' });
-		}
-		try {
-			const result = await usersCollection.updateOne(
-				{ email },
-				{ $set: { score } }
-			);
-			if (result.matchedCount === 0) {
-				return res.status(404).json({ error: 'User not found' });
-			}
-			
-			// Also save to scores collection
-			await scoresCollection.insertOne({ email, score, date: new Date() });
-			
-			res.json({ success: true });
-		} catch (err) {
-			res.status(500).json({ error: 'Failed to update score', details: err.message });
-		}
-	});
-
-	// Login endpoint
-	app.post('/api/login', async (req, res) => {
-		const { email, password } = req.body;
-		if (!email || !password) {
-			return res.status(400).json({ error: 'Missing email or password' });
-		}
-		try {
-			const user = await usersCollection.findOne({ email, password });
-			if (!user) {
-				return res.status(401).json({ error: 'Invalid credentials' });
-			}
-			res.json({
-				id: user._id.toString(),
-				email: user.email,
-				name: user.name,
-				firstName: user.firstName,
-				role: user.role,
-				score: user.score,
-				isAdmin: user.role === 'admin'
-			});
-		} catch (err) {
-			res.status(500).json({ error: 'Login failed', details: err.message });
-		}
-	});
-
-	// Signup endpoint
-	app.post('/api/signup', async (req, res) => {
-		const { name, email, password, requestAdmin } = req.body;
-		if (!name || !email || !password) {
-			return res.status(400).json({ error: 'Missing required fields' });
-		}
-		try {
-			const existingUser = await usersCollection.findOne({ email });
-			if (existingUser) {
-				return res.status(409).json({ error: 'User already exists' });
-			}
-
-			const newUser = {
-				name,
-				email,
-				password,
-				firstName: name.split(' ')[0],
-				role: requestAdmin ? 'pending_admin' : 'candidate',
-				score: null,
-				createdAt: new Date()
-			};
-
-			await usersCollection.insertOne(newUser);
-
-			if (requestAdmin) {
-				return res.json({ success: true, pending: true, message: 'Admin request pending approval' });
-			}
-
-			res.json({ success: true, message: 'Account created successfully' });
-		} catch (err) {
-			res.status(500).json({ error: 'Signup failed', details: err.message });
-		}
-	});
+// ...existing code...
 
 	// Get all users (admin)
 	app.get('/api/users', async (req, res) => {
@@ -424,10 +253,28 @@
 	const aiRouter = require('./ai');
 	app.use('/api', aiRouter);
 
-	// Start server
+	// Google OAuth endpoint
+	app.post('/api/google-auth', async (req, res) => {
+		const { credential, mode } = req.body;
+		if (!credential) return res.status(400).json({ error: 'Missing credential' });
+		try {
+			// Verify the Google ID token
+			const ticket = await googleClient.verifyIdToken({
+				idToken: credential,
+				audience: GOOGLE_CLIENT_ID,
+			});
+			const payload = ticket.getPayload();
+			// Here you would look up or create the user in your DB
+			// For now, just return the payload
+			res.json({ success: true, user: payload, mode });
+		} catch (err) {
+			res.status(401).json({ error: 'Invalid Google credential', details: err.message });
+		}
+	});
+
+	// Start server (single instance)
 	const PORT = process.env.PORT || 5000;
 	app.listen(PORT, () => {
 		console.log(`Server running on port ${PORT}`);
 	});
-})();
 
