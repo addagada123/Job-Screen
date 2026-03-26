@@ -253,7 +253,7 @@ app.get('/', (req, res) => {
 	const aiRouter = require('./ai');
 	app.use('/api', aiRouter);
 
-	// Google OAuth endpoint
+	// Google OAuth endpoint with user DB integration
 	app.post('/api/google-auth', async (req, res) => {
 		const { credential, mode } = req.body;
 		if (!credential) return res.status(400).json({ error: 'Missing credential' });
@@ -264,9 +264,24 @@ app.get('/', (req, res) => {
 				audience: GOOGLE_CLIENT_ID,
 			});
 			const payload = ticket.getPayload();
-			// Here you would look up or create the user in your DB
-			// For now, just return the payload
-			res.json({ success: true, user: payload, mode });
+			// Find or create user in DB
+			let user = await usersCollection.findOne({ email: payload.email });
+			if (!user) {
+				user = {
+					email: payload.email,
+					name: payload.name,
+					picture: payload.picture,
+					role: 'user',
+					createdAt: new Date(),
+				};
+				await usersCollection.insertOne(user);
+			}
+			// Optionally update user info on login
+			await usersCollection.updateOne(
+				{ email: payload.email },
+				{ $set: { name: payload.name, picture: payload.picture, lastLogin: new Date() } }
+			);
+			res.json({ success: true, user });
 		} catch (err) {
 			res.status(401).json({ error: 'Invalid Google credential', details: err.message });
 		}
