@@ -5,7 +5,7 @@ import GoogleAuthButton from "./GoogleAuthButton";
 
 const MotionBox = motion.create(Box);
 
-export default function AuthForm({ type = "login", onSubmit }) {
+export default function AuthForm({ type = "login", onSubmit, isLoading = false }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -219,6 +219,8 @@ export default function AuthForm({ type = "login", onSubmit }) {
                   transform: "translateY(0)",
                 }}
                 transition="all 0.3s ease"
+                isLoading={isLoading}
+                isDisabled={isLoading}
               >
                 {type === "login" ? "Sign In" : "Create Account"}
               </Button>

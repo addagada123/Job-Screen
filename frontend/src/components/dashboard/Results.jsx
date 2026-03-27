@@ -1,6 +1,9 @@
 import { Box, Heading, VStack, Text, Spinner, Center } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getUserStatus } from "../../api";
+import { motion } from "framer-motion";
+
+const MotionBox = motion.create ? motion.create(Box) : motion(Box);
 
 export default function Results() {
   const [resultMsg, setResultMsg] = useState("");
@@ -28,9 +31,9 @@ export default function Results() {
   }, []);
 
   return (
-    <Box maxW="600px" mx="auto" mt={32} p={8}>
+    <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="750px" mx="auto" mt={6} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" p={8} boxShadow="2xl" border="1px solid rgba(255,255,255,0.05)">
       <VStack spacing={8} align="center">
-        <Heading size="xl" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
+        <Heading size="lg" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
           Application Status
         </Heading>
         
@@ -40,10 +43,9 @@ export default function Results() {
           <Center 
             p={10} 
             w="full" 
-            bg="rgba(255, 255, 255, 0.03)" 
+            bg="rgba(255, 255, 255, 0.02)" 
             borderRadius="3xl" 
             border="1px solid rgba(255,255,255,0.05)"
-            boxShadow="0 8px 32px rgba(0,0,0,0.4)"
           >
             <Text 
               fontSize="2xl" 
@@ -57,6 +59,6 @@ export default function Results() {
           </Center>
         )}
       </VStack>
-    </Box>
+    </MotionBox>
   );
 }

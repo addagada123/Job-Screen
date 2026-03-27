@@ -3,8 +3,11 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadResume } from "../../api";
 import { getCurrentUser } from "../../utils/auth";
+import { motion } from "framer-motion";
 
-function Resume() {
+const MotionBox = motion.create ? motion.create(Box) : motion(Box);
+
+function Resume({ onResumeUpload }) {
   const [resumeName, setResumeName] = useState("");
   const [uploaded, setUploaded] = useState(!!localStorage.getItem("resumeUploaded"));
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,7 @@ function Resume() {
         title: "Test already taken",
         description: "You have already completed the assessment. Please wait for the results.",
         status: "info",
-        duration: 3000,
+        duration: 1500,
         isClosable: true,
       });
       return;
@@ -40,7 +43,7 @@ function Resume() {
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) {
-      toast({ title: "No file selected", status: "error", duration: 2000, isClosable: true });
+      toast({ title: "No file selected", status: "error", duration: 1500, isClosable: true });
       return;
     }
     setLoading(true);
@@ -58,17 +61,22 @@ function Resume() {
       localStorage.setItem("resumeUploaded", "true");
       localStorage.setItem("skills", JSON.stringify(detectedSkills));
 
-      toast({ title: "Resume uploaded!", status: "success", duration: 2000, isClosable: true });
+      // Update user object as well for faster UI sync
+      const updatedUser = { ...user, resumeUploaded: true };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      toast({ title: "Resume uploaded!", status: "success", duration: 1500, isClosable: true });
+      if (onResumeUpload) onResumeUpload();
     } catch (err) {
-      toast({ title: "Upload failed", description: err.message, status: "error", duration: 3000, isClosable: true });
+      toast({ title: "Upload failed", description: err.message, status: "error", duration: 1500, isClosable: true });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box maxW="600px" mx="auto" mt={20} bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} boxShadow="xl">
-      <Heading size="lg" mb={6} textAlign="center">
+    <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="750px" mx="auto" mt={6} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" p={8} boxShadow="2xl" border="1px solid rgba(255,255,255,0.05)">
+      <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
         Resume Upload
       </Heading>
       <VStack spacing={6}>
@@ -120,7 +128,7 @@ function Resume() {
         )}
         <Text color="gray.400" fontSize="sm">Accepted formats: PDF, DOC, DOCX</Text>
       </VStack>
-    </Box>
+    </MotionBox>
   );
 }
 

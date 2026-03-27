@@ -14,18 +14,18 @@ export default function GoogleAuthButton({ mode = 'login' }) {
           const result = await googleAuth(credentialResponse.credential, mode);
           if (result && result.user) {
             localStorage.setItem("user", JSON.stringify(result.user));
+            if (result.token) localStorage.setItem("token", result.token);
           }
-          toast({ title: 'Google Auth Success', status: 'success' });
+          toast({ title: 'Google Auth Success', status: 'success', duration: 1500 });
           navigate('/dashboard');
         } catch (err) {
-          toast({ title: 'Google Auth Failed', description: err.message, status: 'error' });
+          toast({ title: 'Google Auth Failed', description: err.message, status: 'error', duration: 1500 });
         }
       }}
       onError={() => {
-        toast({ title: 'Google Auth Failed', status: 'error' });
+        toast({ title: 'Google Auth Failed', status: 'error', duration: 1500 });
       }}
       width={300}
     />
   );
 }
-

@@ -10,26 +10,32 @@ export default function RetakeRequestModal({ isOpen, onClose }) {
 
   const handleSubmit = async () => {
     if (reason.length < 10) {
-      toast({ title: "Reason must be at least 10 characters", status: "warning" });
+      toast({ title: "Reason must be at least 10 characters", status: "warning", duration: 1500 });
       return;
     }
 
     setLoading(true);
     try {
+      const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
       const user = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch('/api/retake-request', {
+      const token = localStorage.getItem("token");
+      
+      const res = await fetch(`${API_BASE}/api/retake-request`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ email: user.email, reason })
       });
       
       if (!res.ok) throw new Error('Failed to submit');
       
-      toast({ title: "Retake request submitted!", status: "success" });
+      toast({ title: "Retake request submitted!", status: "success", duration: 1500 });
       onClose();
       navigate('/dashboard/results');
     } catch (err) {
-      toast({ title: "Failed to submit request", status: "error" });
+      toast({ title: "Failed to submit request", status: "error", duration: 1500 });
     } finally {
       setLoading(false);
     }

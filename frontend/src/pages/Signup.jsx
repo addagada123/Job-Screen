@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { signup } from "../api";
 
-export default function Signup() {
+export default function Signup({ setUser, setTestTaken }) {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
   const [waitMsg, setWaitMsg] = useState("");
@@ -18,21 +19,29 @@ export default function Signup() {
     const email = form.email.value;
     const password = form.password.value;
     const requestAdmin = form.admin?.checked;
+    setLoading(true);
     try {
       const data = await signup(name, email, password, requestAdmin);
-      if (data.pending) {
+      // data is { user, token }
+      if (data.user?.role === 'pending_admin') {
         setWaitMsg("Wait for admin to approve you.");
-        toast({ title: "Admin request submitted", description: "Please wait for approval", status: "info" });
+        toast({ title: "Admin request submitted", description: "Please wait for approval", status: "info", duration: 1500 });
       } else {
-        toast({ title: "Signup successful!", status: "success" });
-        navigate("/login");
+        localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.token) localStorage.setItem("token", data.token);
+        setUser(data.user);
+        setTestTaken(!!data.user?.testTaken);
+        toast({ title: "Signup successful!", status: "success", duration: 1500 });
+        navigate("/dashboard");
       }
     } catch (err) {
       if (err.message && err.message.includes('already exists')) {
-        toast({ title: "Account already exists", description: "You already have an account with this email. Please Sign In.", status: "warning" });
+        toast({ title: "Account already exists", description: "You already have an account with this email. Please Sign In.", status: "warning", duration: 1500 });
       } else {
-        toast({ title: "Signup failed", description: err.message || "Something went wrong", status: "error" });
+        toast({ title: "Signup failed", description: err.message || "Something went wrong", status: "error", duration: 1500 });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,7 +72,7 @@ export default function Signup() {
       />
       
       <Box position="relative" zIndex={1}>
-        <AuthForm type="signup" onSubmit={handleSignup} />
+        <AuthForm type="signup" onSubmit={handleSignup} isLoading={loading} />
         {waitMsg && <Text mt={4} textAlign="center" color="yellow.300">{waitMsg}</Text>}
         <Text mt={4} textAlign="center" color="gray.400">
           Already have an account? <ChakraLink as={Link} color="#6366f1" to="/login">Sign In</ChakraLink>

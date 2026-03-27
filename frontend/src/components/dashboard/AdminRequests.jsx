@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, Text, useToast, HStack } from "@chakra-ui/react";
 import { getAdminRequests, approveAdminRequest } from "../../api";
+import { motion } from "framer-motion";
+
+const MotionBox = motion.create ? motion.create(Box) : motion(Box);
 
 export default function AdminRequests() {
   const [requests, setRequests] = useState([]);
@@ -28,16 +31,16 @@ export default function AdminRequests() {
   const handleApprove = async (email, approve) => {
     try {
       await approveAdminRequest(email, approve);
-      toast({ title: approve ? "Admin approved!" : "Request rejected", status: approve ? "success" : "info" });
+      toast({ title: approve ? "Admin approved!" : "Request rejected", status: approve ? "success" : "info", duration: 1500 });
       fetchRequests();
     } catch (err) {
-      toast({ title: "Operation failed", status: "error" });
+      toast({ title: "Operation failed", status: "error", duration: 1500 });
     }
   };
 
   return (
-    <Box maxW="700px" mx="auto" mt={8} bg="rgba(30,38,51,0.7)" borderRadius="2xl" p={8} boxShadow="xl">
-      <Heading size="lg" mb={6} textAlign="center">Admin Access Requests</Heading>
+    <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="750px" mx="auto" mt={6} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" p={8} boxShadow="2xl" border="1px solid rgba(255,255,255,0.05)">
+      <Heading size="lg" mb={8} textAlign="center" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">Admin Access Requests</Heading>
       {loading ? <Spinner size="xl" /> : error ? <Text color="red.300">{error}</Text> : (
         requests.length === 0 ? (
           <Text color="gray.400" textAlign="center" py={10} fontSize="lg">
@@ -47,9 +50,9 @@ export default function AdminRequests() {
           <Table variant="simple" colorScheme="cyan">
             <Thead>
               <Tr>
-                <Th>Name</Th>
-                <Th>Email</Th>
-                <Th>Action</Th>
+                <Th color="gray.400" fontSize="xs" fontWeight="bold" letterSpacing="wider" textTransform="uppercase">Name</Th>
+                <Th color="gray.400" fontSize="xs" fontWeight="bold" letterSpacing="wider" textTransform="uppercase">Email</Th>
+                <Th color="gray.400" fontSize="xs" fontWeight="bold" letterSpacing="wider" textTransform="uppercase" textAlign="right">Action</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -57,10 +60,10 @@ export default function AdminRequests() {
                 <Tr key={i}>
                   <Td>{r.name}</Td>
                   <Td>{r.email}</Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      <Button colorScheme="green" size="sm" onClick={() => handleApprove(r.email, true)}>Approve</Button>
-                      <Button colorScheme="red" size="sm" onClick={() => handleApprove(r.email, false)}>Reject</Button>
+                  <Td textAlign="right">
+                    <HStack spacing={2} justify="flex-end">
+                      <Button colorScheme="cyan" size="sm" onClick={() => handleApprove(r.email, true)}>Approve</Button>
+                      <Button colorScheme="red" size="sm" variant="outline" onClick={() => handleApprove(r.email, false)}>Reject</Button>
                     </HStack>
                   </Td>
                 </Tr>
@@ -69,6 +72,6 @@ export default function AdminRequests() {
           </Table>
         )
       )}
-    </Box>
+    </MotionBox>
   );
 }

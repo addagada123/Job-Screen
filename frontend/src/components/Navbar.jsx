@@ -1,30 +1,18 @@
-
 import { Flex, Box, Button, Spacer, Text, HStack, IconButton } from "@chakra-ui/react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const MotionFlex = motion.create(Flex);
+const MotionFlex = motion.create ? motion.create(Flex) : motion(Flex);
 
-export default function Navbar() {
-  const [user, setUser] = useState(null);
+export default function Navbar({ user, setUser, setTestTaken }) {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const u = localStorage.getItem("user");
-      setUser(u ? JSON.parse(u) : null);
-    };
-
-    handleStorageChange();
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("resumeUploaded");
     setUser(null);
+    setTestTaken(false);
     navigate("/login");
   };
   return (
@@ -37,7 +25,7 @@ export default function Navbar() {
       py={4}
       position="fixed"
       top={0}
-      left={0}
+      left={{ base: 0, md: user ? 72 : 0 }}
       right={0}
       zIndex={1000}
       initial={{ y: -100 }}
@@ -58,8 +46,8 @@ export default function Navbar() {
       }}
     >
       <Box position="relative" zIndex={1}>
-        <Link to={user ? "/dashboard" : "/"}>
-          <HStack spacing={2}>
+        <Link to="/">
+          <HStack spacing={2} display={user ? { base: "flex", md: "none" } : "flex"}>
             <Box
               w={10}
               h={10}
@@ -99,7 +87,7 @@ export default function Navbar() {
             onClick={handleLogout}
             transition="all 0.3s ease"
           >
-            Sign Out
+            Logout
           </Button>
         ) : (
           <>
@@ -119,7 +107,7 @@ export default function Navbar() {
               }}
               transition="all 0.3s ease"
             >
-              Sign In
+              Login
             </Button>
             <Button
               as={Link}

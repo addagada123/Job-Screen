@@ -5,10 +5,13 @@ import { generateQuestion } from "../../api.question";
 import { FaMicrophone, FaStop, FaCheckCircle, FaCamera, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import InterviewerAvatar from "./InterviewerAvatar";
+import { motion } from "framer-motion";
+
+const MotionBox = motion.create ? motion.create(Box) : motion(Box);
 
 const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
 
-export default function Test() {
+export default function Test({ user, onComplete }) {
   const [testStarted, setTestStarted] = useState(false);
   const [answer, setAnswer] = useState("");
   const [voiceAnswer, setVoiceAnswer] = useState("");
@@ -42,22 +45,53 @@ export default function Test() {
   const toast = useToast();
   const tabSwitches = useRef(0);
   const navigate = useNavigate();
+  const [retakeReason, setRetakeReason] = useState("");
+  const [retakeSubmitted, setRetakeSubmitted] = useState(false);
+  const silenceTimerRef = useRef(null);
+  const lastPartialTranscriptRef = useRef("");
+  
+  const handleRetakeRequest = async () => {
+    if (retakeReason.length < 10) {
+      toast({ title: "Reason too short", description: "Please explain in at least 10 characters.", status: "warning", duration: 1500 });
+      return;
+    }
+    setLoading(true);
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const res = await fetch(`${API_BASE}/api/retake-request`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ email: user.email, reason: retakeReason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit request");
+      toast({ title: "Request Submitted", description: "Waiting for admin approval", status: "success", duration: 1500 });
+      setRetakeSubmitted(true);
+    } catch (err) {
+      toast({ title: "Error", description: err.message, status: "error", duration: 1500 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Block access if resume is not uploaded
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const resumeUploaded = localStorage.getItem("resumeUploaded");
-
     if (!user) {
       navigate("/login");
       return;
     }
 
-    if (!resumeUploaded) {
-      toast({ title: "Please upload your resume first.", status: "warning", duration: 3000 });
+    const resumeUploaded = localStorage.getItem("resumeUploaded");
+    const isUploaded = resumeUploaded || user.resumeUploaded;
+
+    if (!isUploaded) {
+      toast({ title: "Please upload your resume first.", status: "warning", duration: 1500 });
       navigate("/dashboard/resume");
     }
-  }, [navigate, toast]);
+  }, [navigate, toast, user]);
 
   // Handle Security Violation
   const handleSecurityViolation = async (reason) => {
@@ -67,14 +101,14 @@ export default function Test() {
       try {
         await Promise.all([
           markTestTaken(user.email),
-          updateUserScore(user.email, 0)
+          updateUserScore(user.email, 0, selectedLanguage)
         ]);
         
         toast({
           title: "Security Violation",
           description: `Test terminated: ${reason}. Score: 0. Logging out...`,
           status: "error",
-          duration: 5000,
+          duration: 1500,
           isClosable: true
         });
 
@@ -103,7 +137,7 @@ export default function Test() {
         if (tabSwitches.current > 4) {
           handleSecurityViolation("Too many tab switches");
         } else {
-          toast({ title: `Tab switch detected (${tabSwitches.current}/4 allowed)`, status: "warning", duration: 3000 });
+          toast({ title: `Tab switch detected (${tabSwitches.current}/4 allowed)`, status: "warning", duration: 1500 });
         }
       }
     };
@@ -150,6 +184,7 @@ export default function Test() {
   useEffect(() => {
     if (testCompleted) {
       const timer = setTimeout(() => {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
         navigate("/dashboard");
       }, 3000);
       return () => clearTimeout(timer);
@@ -168,6 +203,7 @@ export default function Test() {
     if (!user) return;
     if (user.testTaken === true) {
       setTestBlocked(true);
+      if (onComplete) onComplete();
     }
   }, []);
 
@@ -192,7 +228,7 @@ export default function Test() {
         title: "Hardware Access Required",
         description: "Please allow camera and microphone access to proceed with the test.",
         status: "error",
-        duration: 5000,
+        duration: 1500,
         isClosable: true
       });
     } finally {
@@ -277,7 +313,7 @@ export default function Test() {
         scoreRef.current += 1;
       }
     } catch (err) {
-      toast({ title: "API Error", description: err.message, status: "error", duration: 3000, isClosable: true });
+      toast({ title: "API Error", description: err.message, status: "error", duration: 1500, isClosable: true });
     } finally {
       setLoading(false);
     }
@@ -293,7 +329,7 @@ export default function Test() {
           // Finalize test in backend
           await Promise.all([
             markTestTaken(user.email),
-            updateUserScore(user.email, scoreRef.current)
+            updateUserScore(user.email, scoreRef.current, selectedLanguage)
           ]);
           
           user.testTaken = true;
@@ -305,13 +341,14 @@ export default function Test() {
           title: "Test Completed!",
           description: `You have scored ${currentScore}/${question.total}. Results will be reviewed by admin.`,
           status: "success",
-          duration: 4000,
+          duration: 1500,
           isClosable: true
         });
         setTestCompleted(true);
+        if (onComplete) onComplete();
         onConfirmClose();
       } catch (err) {
-        toast({ title: "Error submitting test", status: "error" });
+        toast({ title: "Error submitting test", status: "error", duration: 1500 });
       } finally {
         setLoading(false);
       }
@@ -324,45 +361,88 @@ export default function Test() {
 
   if (testCompleted) {
     return (
-      <Box maxW="600px" mx="auto" mt={20} p={10} bg="rgba(30,38,51,0.7)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(0,255,255,0.2)" textAlign="center">
+      <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="600px" mx="auto" mt={8} p={10} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(0,255,255,0.2)" textAlign="center">
         <Icon as={FaCheckCircle} w={16} h={16} color="green.400" mb={6} />
         <Heading size="xl" mb={4} color="white">Thank you for submitting the test!</Heading>
         <Text color="gray.400" fontSize="lg" mb={8}>
           Your assessment has been recorded successfully. Our team will review your results.
         </Text>
         <Text color="cyan.300" fontSize="sm" mb={4}>Redirecting to dashboard in 3 seconds...</Text>
-        <Button size="lg" colorScheme="cyan" onClick={() => navigate("/dashboard")} px={10}>
+        <Button size="lg" colorScheme="cyan" onClick={() => {
+          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+          navigate("/dashboard");
+        }} px={10}>
           Go to Dashboard Now
         </Button>
-      </Box>
+      </MotionBox>
     );
   }
 
   if (testBlocked || forceExit) {
     return (
-      <Box maxW="700px" mx="auto" mt={20}>
-        <Alert status={forceExit ? "error" : "info"} borderRadius="md" mb={8} variant="solid" bg={forceExit ? "red.900" : "blue.900"}>
+      <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="700px" mx="auto" mt={8} p={8} bg="rgba(20,25,35,0.8)" backdropFilter="blur(10px)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(255,255,255,0.1)">
+        <Alert 
+          status={forceExit ? "error" : "info"} 
+          borderRadius="md" 
+          mb={6} 
+          variant="subtle" 
+          bg={forceExit ? "rgba(254, 178, 178, 0.16)" : "rgba(144, 205, 244, 0.16)"}
+          color={forceExit ? "red.200" : "blue.200"}
+        >
           <AlertIcon />
           <Box>
             <AlertTitle>{forceExit ? "Security Violation" : "Assessment Completed"}</AlertTitle>
             <AlertDescription>
               {forceExit
                 ? "Test terminated due to leaving fullscreen or too many tab switches. Please contact admin."
-                : "You have already completed the test. Please wait for the admin to review your results."}
+                : "You have already completed the test. Your results are under review."}
             </AlertDescription>
           </Box>
         </Alert>
-        <Button onClick={() => navigate("/dashboard/results")} colorScheme="cyan" mt={6}>
-          View My Results
-        </Button>
-      </Box>
+        
+        {!forceExit && (
+          <Box bg="rgba(0,0,0,0.2)" p={6} borderRadius="xl" mb={6}>
+            <Heading size="md" color="white" mb={4}>Request Retake</Heading>
+            {retakeSubmitted ? (
+               <Alert status="success" borderRadius="md" bg="green.900" color="green.100"><AlertIcon />Your request for a retake has been submitted successfully. Please wait for admin approval.</Alert>
+            ) : (
+              <>
+                <Text color="gray.400" mb={3}>If you faced technical issues, you can request another attempt.</Text>
+                <Textarea 
+                  placeholder="Enter reason for requesting a retake (min 10 chars)..." 
+                  value={retakeReason}
+                  onChange={(e) => setRetakeReason(e.target.value)}
+                  bg="rgba(15,18,24,0.8)"
+                  color="white"
+                  borderColor="rgba(255,255,255,0.1)"
+                  mb={4}
+                  isDisabled={loading}
+                />
+                <Button colorScheme="cyan" isLoading={loading} onClick={handleRetakeRequest} w="full">Submit Retake Request</Button>
+              </>
+            )}
+          </Box>
+        )}
+        
+        <HStack spacing={4}>
+          <Button onClick={() => {
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            navigate("/dashboard");
+          }} variant="ghost" colorScheme="cyan" w="full">
+            Back to Dashboard
+          </Button>
+          <Button onClick={() => {
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            navigate("/dashboard/results");
+          }} colorScheme="cyan" w="full">
+            View My Results
+          </Button>
+        </HStack>
+      </MotionBox>
     );
   }
 
   // --- Speech-to-text logic with 3.5s Silence Timeout & Auto-Restart ---
-  const silenceTimerRef = useRef(null);
-  const lastPartialTranscriptRef = useRef("");
-
   const resetSilenceTimer = () => {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     silenceTimerRef.current = setTimeout(() => {
@@ -457,7 +537,7 @@ export default function Test() {
         scoreRef.current += 1;
       }
     } catch (err) {
-      toast({ title: "API Error", description: err.message, status: "error" });
+      toast({ title: "API Error", description: err.message, status: "error", duration: 1500 });
     } finally {
       setLoading(false);
     }
@@ -465,7 +545,7 @@ export default function Test() {
 
   if (!testStarted) {
     return (
-      <Box maxW="800px" mx="auto" mt={20} p={8} bg="rgba(30,38,51,0.7)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(255,255,255,0.1)">
+      <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="800px" mx="auto" mt={16} p={8} bg="rgba(30,38,51,0.7)" borderRadius="2xl" boxShadow="2xl" border="1px solid rgba(255,255,255,0.1)">
         <VStack spacing={8} align="stretch">
           <Box textAlign="center">
             <Heading size="xl" mb={4} bgGradient="linear(to-r, cyan.400, purple.400)" bgClip="text">
@@ -541,12 +621,12 @@ export default function Test() {
             </HStack>
           </Box>
         </VStack>
-      </Box>
+      </MotionBox>
     );
   }
 
   return (
-    <Box maxW="700px" mx="auto" mt={20}>
+    <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxW="700px" mx="auto" mt={16}>
       <HStack justify="space-between" mb={4} p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">
         <VStack align="start" spacing={0}>
           <Text fontSize="xs" color="gray.400" textTransform="uppercase">Question</Text>
@@ -728,6 +808,6 @@ export default function Test() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </Box>
+    </MotionBox>
   );
 }

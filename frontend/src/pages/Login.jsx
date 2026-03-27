@@ -1,11 +1,11 @@
 import { Box, Text, Link as ChakraLink, useToast } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import AuthForm from "../components/AuthForm";
-// import GoogleAuthButton from "../components/GoogleAuthButton";
-import { useNavigate } from "react-router-dom";
 import { login } from "../api";
 
-export default function Login() {
+export default function Login({ setUser, setTestTaken }) {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -14,13 +14,21 @@ export default function Login() {
     const form = e.target;
     const email = form.email.value;
     const password = form.password.value;
+    setLoading(true);
     try {
-      const user = await login(email, password);
-      localStorage.setItem("user", JSON.stringify(user));
-      toast({ title: "Sign in successful!", status: "success" });
+      const data = await login(email, password);
+      // data is { user, token }
+      localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.token) localStorage.setItem("token", data.token);
+      
+      setUser(data.user);
+      setTestTaken(!!data.user.testTaken);
+      toast({ title: "Sign in successful!", status: "success", duration: 1500 });
       navigate("/dashboard");
     } catch (err) {
-      toast({ title: "Sign in failed", description: err.message, status: "error" });
+      toast({ title: "Sign in failed", description: err.message, status: "error", duration: 1500 });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,7 +59,7 @@ export default function Login() {
       />
       
       <Box position="relative" zIndex={1}>
-        <AuthForm type="login" onSubmit={handleLogin} />
+        <AuthForm type="login" onSubmit={handleLogin} isLoading={loading} />
         <Text mt={4} textAlign="center" color="gray.400">
           No account? <ChakraLink as={Link} color="#6366f1" to="/signup">Sign up</ChakraLink>
         </Text>

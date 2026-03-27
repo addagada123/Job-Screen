@@ -4,28 +4,53 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import ScrollToTop from "./components/ScrollToTop";
+
+import { useState, useEffect } from "react";
 
 function App() {
-  const location = useLocation();
-  const hideNavbar = location.pathname.startsWith("/dashboard/test");
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  });
 
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "406943845792-eiubf40t6lth2sk5fbtbllfia9buj26c.apps.googleusercontent.com";
+  const [testTaken, setTestTaken] = useState(() => {
+    return !!user?.testTaken;
+  });
+
+  const location = useLocation();
+
+  useEffect(() => {
+    const syncAuth = () => {
+      const u = JSON.parse(localStorage.getItem("user") || "null");
+      setUser(u);
+      setTestTaken(!!u?.testTaken);
+    };
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
+  }, []);
+  const hideNavbar = location.pathname.startsWith("/dashboard/test") && !testTaken;
+
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      {!hideNavbar && <Navbar />}
+    <>
+      <ScrollToTop />
+      {!hideNavbar && <Navbar user={user} setUser={setUser} setTestTaken={setTestTaken} />}
 
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login setUser={setUser} setTestTaken={setTestTaken} />} />
+        <Route path="/signup" element={<Signup setUser={setUser} setTestTaken={setTestTaken} />} />
         <Route
           path="/dashboard/*"
-          element={<Dashboard hideSidebar={hideNavbar} />}
+          element={<Dashboard user={user} setUser={setUser} hideSidebar={hideNavbar} testTaken={testTaken} setTestTaken={setTestTaken} />}
         />
       </Routes>
-    </GoogleOAuthProvider>
+    </>
   );
 }
 

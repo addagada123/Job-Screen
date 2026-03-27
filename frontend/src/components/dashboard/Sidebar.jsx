@@ -1,10 +1,12 @@
-import { Box, VStack, Avatar, Text, HStack, Icon, useToast } from "@chakra-ui/react";
+import { Box, VStack, Avatar, Text, HStack, Icon, useToast, Button } from "@chakra-ui/react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../utils/auth";
+import { RepeatIcon } from "@chakra-ui/icons";
 
-const MotionBox = motion(Box);
+// Use motion.create if available for forward compatibility
+const MotionBox = motion.create ? motion.create(Box) : motion(Box);
 
 const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   const location = useLocation();
@@ -12,9 +14,9 @@ const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   return (
     <NavLink to={to} style={{ width: "100%", textDecoration: "none" }} onClick={onClick}>
       <MotionBox
-        py={3}
+        py={2}
         px={4}
-        borderRadius="xl"
+        borderRadius="lg"
         cursor="pointer"
         position="relative"
         bg={isActive ? "rgba(99, 102, 241, 0.15)" : "transparent"}
@@ -49,24 +51,42 @@ const NavItem = ({ to, children, isAdmin = false, onClick }) => {
   );
 };
 
-export default function Sidebar({ user }) {
+
+export default function Sidebar({ user, resumeUploaded: resumeUploadedProp }) {
   const toast = useToast();
   const navigate = useNavigate();
-  const [resumeUploaded, setResumeUploaded] = useState(!!localStorage.getItem("resumeUploaded"));
+  const [resumeUploaded, setResumeUploaded] = useState(() => {
+    if (typeof resumeUploadedProp === "boolean") return resumeUploadedProp;
+    return !!localStorage.getItem("resumeUploaded");
+  });
+
 
   useEffect(() => {
     // Listen for resume upload changes
-    const handler = () => setResumeUploaded(!!localStorage.getItem("resumeUploaded"));
+    const handler = () => {
+      setResumeUploaded(typeof resumeUploadedProp === "boolean" ? resumeUploadedProp : !!localStorage.getItem("resumeUploaded"));
+    };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
-  }, []);
+  }, [resumeUploadedProp]);
 
-  const handleTestClick = () => {
-    if (!resumeUploaded) {
-      toast({ title: "Please upload your resume first.", status: "warning" });
-      return;
+
+  // Sync state if user object or prop changes
+  useEffect(() => {
+    if (typeof resumeUploadedProp === "boolean") {
+      setResumeUploaded(resumeUploadedProp);
+    } else if (user?.resumeUploaded) {
+      setResumeUploaded(true);
     }
-    navigate("/dashboard/test");
+  }, [user, resumeUploadedProp]);
+
+  const handleTestClick = (e) => {
+    const isUploaded = resumeUploaded || user?.resumeUploaded;
+    if (!isUploaded && !user?.testTaken) {
+      e.preventDefault();
+      // Test.jsx will handle the warning and redirect if they navigate directly
+      navigate("/dashboard/resume");
+    }
   };
 
   return (
@@ -110,9 +130,38 @@ export default function Sidebar({ user }) {
         pointerEvents="none"
       />
 
-      <VStack spacing={0} h="100%" py={6} position="relative" zIndex={1}>
+      <VStack spacing={0} h="100%" pt={6} pb={6} position="relative" zIndex={1}>
+        {/* Logo in Sidebar */}
+        <Box mb={10} px={4} w="100%">
+          <HStack spacing={2}>
+            <Box
+              w={8}
+              h={8}
+              borderRadius="lg"
+              bgGradient="linear(135deg, #6366f1, #8b5cf6)"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              boxShadow="0 4px 15px rgba(99, 102, 241, 0.3)"
+            >
+              <Text fontSize="md" fontWeight="bold">JS</Text>
+            </Box>
+            <Text
+              fontFamily="'Space Grotesk', sans-serif"
+              fontSize="lg"
+              fontWeight="700"
+              color="white"
+              letterSpacing="-0.02em"
+            >
+              JobScreen
+              <Text as="span" bgGradient="linear(to-r, #6366f1, #8b5cf6)" bgClip="text">
+                Pro
+              </Text>
+            </Text>
+          </HStack>
+        </Box>
         {/* User Profile */}
-        <VStack spacing={3} mb={8} px={4} w="100%">
+          <VStack spacing={3} mb={8} px={4} w="100%">
           <Box
             p={1}
             borderRadius="full"
@@ -120,7 +169,7 @@ export default function Sidebar({ user }) {
           >
             <Avatar
               name={user?.name || "User"}
-              size="xl"
+              size="lg"
               bg="rgba(10, 10, 15, 0.8)"
               color="white"
             />
@@ -149,15 +198,22 @@ export default function Sidebar({ user }) {
         </VStack>
 
         {/* Divider */}
-        <Box w="80%" h="1px" bg="rgba(255, 255, 255, 0.05)" mb={4} />
+        <Box w="80%" h="1px" bg="rgba(255, 255, 255, 0.05)" mb={6} />
 
         {/* Navigation */}
         <VStack
           align="stretch"
           spacing={1}
           px={4}
+          pb={8}
           w="100%"
           flex={1}
+          overflowY="auto"
+          sx={{
+            '&::-webkit-scrollbar': { width: '4px' },
+            '&::-webkit-scrollbar-track': { background: 'transparent' },
+            '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.1)', borderRadius: 'full' },
+          }}
         >
           <Text
             fontSize="xs"
@@ -165,50 +221,54 @@ export default function Sidebar({ user }) {
             color="gray.600"
             textTransform="uppercase"
             letterSpacing="wider"
-            mb={2}
+            mb={1}
             px={4}
           >
-            Menu
+            {user?.isAdmin ? "Administration" : "Menu"}
           </Text>
-          <NavItem to="overview">📊 Overview</NavItem>
-          <NavItem to="resume">📄 Resume</NavItem>
-          <NavItem to="test" onClick={handleTestClick}>🧪 Test</NavItem>
-          <NavItem to="results">📈 Results</NavItem>
+          {!user?.isAdmin && (
+            <>
+              <NavItem to="/dashboard/overview">📊 Overview</NavItem>
+              <NavItem to="/dashboard/resume">📄 Resume</NavItem>
+              <NavItem to="/dashboard/test" onClick={handleTestClick}>🧪 Test</NavItem>
+              <NavItem to="/dashboard/results">📈 Results</NavItem>
+            </>
+          )}
 
           {user?.isAdmin && (
             <>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                color="gray.600"
-                textTransform="uppercase"
-                letterSpacing="wider"
-                mt={6}
-                mb={2}
-                px={4}
-              >
-                Admin
-              </Text>
-              <NavItem to="admin-scores" isAdmin>🏆 Scores</NavItem>
-              <NavItem to="admin-users" isAdmin>👥 Users</NavItem>
-              <NavItem to="admin-requests" isAdmin>📋 Requests</NavItem>
+              <NavItem to="/dashboard/admin-scores" isAdmin>🏆 Scores</NavItem>
+              <NavItem to="/dashboard/admin-analytics" isAdmin>📈 Analytics</NavItem>
+              <NavItem to="/dashboard/admin-users" isAdmin>👥 Users</NavItem>
+              <NavItem to="/dashboard/admin-requests" isAdmin>📋 Requests</NavItem>
+              <NavItem to="/dashboard/admin-retake-requests" isAdmin>
+                <RepeatIcon boxSize={4} mr={2} /> Retakes
+              </NavItem>
             </>
           )}
+
+          {/* Logout Button */}
+          <Box w="100%" pt={4} mt="auto">
+            <Button
+              w="100%"
+              variant="ghost"
+              colorScheme="red"
+              onClick={() => {
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                localStorage.removeItem("resumeUploaded");
+                navigate("/login");
+                toast({ title: "Logged out", status: "info", duration: 1500 });
+              }}
+              _hover={{ bg: "rgba(245, 101, 101, 0.1)" }}
+              justifyContent="flex-start"
+              px={4}
+            >
+              🚪 Logout
+            </Button>
+          </Box>
         </VStack>
 
-        {/* Footer */}
-        <Box px={4} w="100%">
-          <Box
-            p={4}
-            borderRadius="xl"
-            bg="rgba(255, 255, 255, 0.02)"
-            border="1px solid rgba(255, 255, 255, 0.05)"
-          >
-            <Text fontSize="xs" color="gray.500" textAlign="center">
-              JobScreen Pro v1.0
-            </Text>
-          </Box>
-        </Box>
       </VStack>
     </MotionBox>
   );

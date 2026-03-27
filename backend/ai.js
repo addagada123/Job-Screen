@@ -4,6 +4,8 @@ const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fetch = require('node-fetch');
 
+const jwt = require('jsonwebtoken');
+
 // Load API keys from environment
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -88,8 +90,23 @@ async function multiModalAsk(prompt, language = "English", forcedModel = null) {
   throw new Error(`All AI models failed. Last error: ${lastError?.message}`);
 }
 
+const JWT_SECRET = process.env.JWT_SECRET || 'jobscreen-super-secret-key-2024';
+
+// Middleware: Authenticate Token 
+const authenticateToken = (req, res, next) => {
+	const authHeader = req.headers['authorization'];
+	const token = authHeader && authHeader.split(' ')[1];
+	if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+	jwt.verify(token, JWT_SECRET, (err, user) => {
+		if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+		req.user = user;
+		next();
+	});
+};
+
 // --- POST /api/evaluate ---
-router.post('/evaluate', async (req, res) => {
+router.post('/evaluate', authenticateToken, async (req, res) => {
   const { prompt, model = "openai", skills = [], language = "English", type = "question", questionText = "" } = req.body;
   try {
     let aiText = "";
