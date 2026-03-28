@@ -190,14 +190,11 @@ const isAdmin = (req, res, next) => {
 			// Skill extraction
 			const skills = extractSkills(text);
 			
-			// If email is provided, update user in DB
-			if (email) {
-				const trimmedEmail = email.toLowerCase().trim();
-				await usersCollection.updateOne(
-					{ email: trimmedEmail },
-					{ $set: { skills, resume: text } }
-				);
-			}
+			// Update user in DB
+			await usersCollection.updateOne(
+				{ email: trimmedEmail },
+				{ $set: { skills, resume: text } }
+			);
 
 			res.json({
 				success: true,
@@ -537,6 +534,7 @@ const isAdmin = (req, res, next) => {
 					name: payload.name,
 					picture: payload.picture,
 					role: 'user',
+					isAdmin: false,
 					createdAt: new Date(),
 				};
 				await usersCollection.insertOne(user);

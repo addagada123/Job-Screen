@@ -1,6 +1,6 @@
 // Question generation utility: tries AI, falls back to static
 // Set VITE_API_BASE to your backend URL (e.g. "/api" or "http://localhost:3000")
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5001";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 export const staticQuestions = [
   {
@@ -40,18 +40,15 @@ export async function generateQuestion(model = "openai", skills = [], language =
     });
     if (!res.ok) throw new Error("AI error");
     const data = await res.json();
-    // Try to parse JSON from aiText
-    let q = null;
-    try {
-      q = JSON.parse(data.aiText);
-    } catch {
-      // fallback: try to extract JSON substring
-      const match = data.aiText.match(/\{[\s\S]*\}/);
-      if (match) q = JSON.parse(match[0]);
+    
+    // The backend now returns the JSON object directly (e.g. { text: "...", category: "..." })
+    if (data && data.text && data.category) {
+      return data;
     }
-    if (q && q.text && q.category) return q;
-    throw new Error("AI did not return valid question");
-  } catch {
+    
+    throw new Error("AI did not return valid question structure");
+  } catch (err) {
+    console.warn("AI Question Generation Failed, falling back to static:", err.message);
     // Fallback to static
     return staticQuestions[Math.floor(Math.random() * staticQuestions.length)];
   }
