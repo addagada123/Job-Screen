@@ -8,7 +8,7 @@ import AdminRequests from "../components/dashboard/AdminRequests";
 import AdminUsers from "../components/dashboard/AdminUsers";
 import AdminRetakeRequests from "../components/dashboard/AdminRetakeRequests";
 import AdminAnalytics from "../components/dashboard/AdminAnalytics";
-import { Outlet, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTakeTest, onViewResults }) {
   // Ensure margin-top for navbar offset

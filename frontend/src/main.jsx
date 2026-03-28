@@ -11,13 +11,11 @@ import "./index.css";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "406943845792-eiubf40t6lth2sk5fbtbllfia9buj26c.apps.googleusercontent.com";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <ChakraProvider theme={theme}>
-          <App />
-        </ChakraProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
-  </StrictMode>
+  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ChakraProvider theme={theme}>
+        <App />
+      </ChakraProvider>
+    </BrowserRouter>
+  </GoogleOAuthProvider>
 );
