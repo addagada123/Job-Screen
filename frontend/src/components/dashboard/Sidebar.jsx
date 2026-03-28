@@ -84,7 +84,13 @@ export default function Sidebar({ user, resumeUploaded: resumeUploadedProp }) {
     const isUploaded = resumeUploaded || user?.resumeUploaded;
     if (!isUploaded && !user?.testTaken) {
       e.preventDefault();
-      // Test.jsx will handle the warning and redirect if they navigate directly
+      toast({ 
+        title: "Please upload your resume first.", 
+        description: "You'll be redirected to the resume upload page.",
+        status: "warning", 
+        duration: 2500,
+        isClosable: true
+      });
       navigate("/dashboard/resume");
     }
   };

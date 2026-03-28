@@ -54,7 +54,7 @@ function DashboardHome({ user, resumeUploaded, testTaken, onUploadResume, onTake
               {testTaken ? (
                 <Alert status="info" borderRadius="md" mb={2}><AlertIcon />Test already taken</Alert>
               ) : (
-                <Button colorScheme="green" onClick={onTakeTest} isDisabled={!resumeUploaded}>Take Test</Button>
+                <Button colorScheme="green" onClick={onTakeTest}>Take Test</Button>
               )}
             </Box>
             <Box>
@@ -277,8 +277,10 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
               testTaken={testTaken}
               onUploadResume={() => navigate("/dashboard/resume")}
               onTakeTest={() => {
-                if (!resumeUploaded) {
+                const isUploaded = resumeUploaded || user?.resumeUploaded;
+                if (!isUploaded) {
                   toast({ title: "Please upload your resume first.", status: "warning", duration: 1500 });
+                  navigate("/dashboard/resume");
                   return;
                 }
                 if (testTaken) {
