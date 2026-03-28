@@ -363,12 +363,12 @@ const isAdmin = (req, res, next) => {
 			await retakeRequestsCollection.updateOne({ _id: new ObjectId(id) }, { $set: { status: 'approved' } });
 			
 			// Enable retake for user by resetting their state
-			// We clear score, language, and selection to ensure a fresh experience
+			// We clear resume, skills, score, language, and selection to ensure a fresh experience
 			await usersCollection.updateOne(
 				{ email: request.email },
 				{ 
 					$set: { canRetake: true, testTaken: false },
-					$unset: { score: "", language: "", selection: "" }
+					$unset: { score: "", language: "", selection: "", resume: "", skills: "" }
 				}
 			);
 

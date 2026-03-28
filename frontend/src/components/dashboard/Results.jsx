@@ -16,6 +16,13 @@ export default function Results() {
       return;
     }
 
+    // If user needs to upload a resume (e.g. they just signed up or retake approved)
+    if (!user.resumeUploaded) {
+      setResultMsg("Please upload your resume to begin the assessment process.");
+      setLoading(false);
+      return;
+    }
+
     // If user needs to take a test (e.g. they just signed up or retake approved)
     if (!user.testTaken) {
       setResultMsg("Please complete the assessment to view your results.");
