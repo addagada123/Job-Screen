@@ -4,24 +4,24 @@ const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 export const staticQuestions = [
   {
-    text: "What is the purpose of a P-trap?",
-    category: "Plumbing"
+    text: "Explain the proper procedure for lockout/tagout (LOTO) on industrial equipment.",
+    category: "Safety"
   },
   {
-    text: "Explain the difference between AC and DC current.",
-    category: "Electrical"
+    text: "What tools and symbols would you expect to see on a residential electrical blueprint?",
+    category: "Blueprints"
   },
   {
-    text: "How do you calculate the area of a triangle?",
-    category: "Math"
+    text: "Describe the steps you would take to troubleshoot a motor that is overheating.",
+    category: "Maintenance"
   },
   {
-    text: "Describe the process of photosynthesis.",
-    category: "Biology"
+    text: "How do you ensure a weld is structurally sound and free of internal voids?",
+    category: "Welding"
   },
   {
-    text: "What is the capital of France?",
-    category: "Geography"
+    text: "What are the common signs of a hydraulic leak in a heavy machinery system?",
+    category: "Diagnostics"
   }
 ];
 

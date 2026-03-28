@@ -114,11 +114,12 @@ router.post('/evaluate', authenticateToken, async (req, res) => {
     // If generating a question
     if (type === "question") {
       if (skills.length > 0) {
-        usedPrompt = `You are a professional technical interviewer for blue-collar and skilled trades. Generate a single HIGHLY TECHNICAL or SITUATIONAL trade interview question relevant STRICTLY and ONLY to these candidate skills: ${skills.join(", ")}. 
-        IMPORTANT: The question must be a technical challenge (e.g. tool usage, safety protocol, troubleshooting) about one of these specific trades/skills. Do NOT ask generic behavioral questions (like "describe yourself"). 
-        Respond ONLY with valid JSON exactly like this: {"text": "specific technical question", "category": "specific category"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional technical interviewer for skilled trades. Generate a single highly technical situational or protocol-based interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
+        CRITICAL: The question must focus on tools, safety standards, or troubleshooting specific to the trade. NEVER ask generic behavioral questions ("describe a challenge", "tell me about yourself") or general knowledge questions. 
+        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
       } else {
-        usedPrompt = `You are a professional technical interviewer for skilled labor. Generate a single highly technical situational interview question for a blue-collar role. Respond ONLY with valid JSON exactly like this: {"text": "technical question", "category": "specific category"}. Do not include markdown formatting.`;
+        usedPrompt = `You are a professional technical interviewer. Generate a single technical and situational interview question for a skilled labor role. Focus on workplace safety or technical problem-solving. 
+        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
       }
     }
     // If evaluating, include language and context

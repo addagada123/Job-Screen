@@ -236,9 +236,10 @@ export default function Test({ user, onComplete }) {
     }
   };
 
-  // Get detected skills and language from localStorage
+  // Get detected skills and language from profile or localStorage
   function getSkillsAndLanguage() {
-    const skills = JSON.parse(localStorage.getItem("skills") || "[]");
+    // Check if user object from props has skills, then check localStorage
+    const skills = user?.skills || JSON.parse(localStorage.getItem("skills") || "[]");
     const language = selectedLanguage;
     return { skills, language };
   }
