@@ -113,12 +113,15 @@ router.post('/evaluate', authenticateToken, async (req, res) => {
     let usedPrompt = prompt;
     // If generating a question
     if (type === "question") {
+      const timestamp = Date.now();
       if (skills.length > 0) {
-        usedPrompt = `You are a professional technical interviewer for skilled trades. Generate a single highly technical situational or protocol-based interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
-        CRITICAL: The question must focus on tools, safety standards, or troubleshooting specific to the trade. NEVER ask generic behavioral questions ("describe a challenge", "tell me about yourself") or general knowledge questions. 
+        usedPrompt = `You are a professional technical interviewer for skilled trades. [Session ID: ${timestamp}]. 
+        Generate a single unique, highly technical situational or protocol-based interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
+        CRITICAL VARIETY: Think of a specific tool, safety standard, or troubleshooting scenario. Every question must be different. NEVER ask generic behavioral or general knowledge questions. 
         Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
       } else {
-        usedPrompt = `You are a professional technical interviewer. Generate a single technical and situational interview question for a skilled labor role. Focus on workplace safety or technical problem-solving. 
+        usedPrompt = `You are a professional technical interviewer. [Session ID: ${timestamp}]. 
+        Generate a single unique technical and situational interview question for a skilled labor role. Focus on a specific workplace safety or technical problem-solving scenario. 
         Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
       }
     }
