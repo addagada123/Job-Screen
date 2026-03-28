@@ -429,6 +429,18 @@ const isAdmin = (req, res, next) => {
 		try {
 			const user = await usersCollection.findOne({ email: req.user.email });
 			if (!user) return res.status(404).json({ error: 'User not found' });
+			
+			// Self-healing: if they have a pending request but the user object doesn't know it
+			const pendingRetake = await retakeRequestsCollection.findOne({ email: user.email, status: 'pending' });
+			if (pendingRetake && user.retakePending !== true) {
+				user.retakePending = true;
+				await usersCollection.updateOne({ email: user.email }, { $set: { retakePending: true } });
+			}
+			if (!pendingRetake && user.retakePending === true) {
+				user.retakePending = false;
+				await usersCollection.updateOne({ email: user.email }, { $unset: { retakePending: "" } });
+			}
+
 			res.json(toUserResponse(user));
 		} catch (err) {
 			res.status(500).json({ error: 'Failed to sync session' });
@@ -626,7 +638,6 @@ const isAdmin = (req, res, next) => {
 
 	// Catch-all route to serve index.html for React Router (Single Page Application)
 	app.get('*', (req, res) => {
-		res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 		res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 	});
 
