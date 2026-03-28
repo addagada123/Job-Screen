@@ -31,10 +31,6 @@ app.use(express.json());
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Default root endpoint
-app.get('/', (req, res) => {
-  res.send('Backend server is running.');
-});
 
 // Middleware to ensure DB is connected
 app.use((req, res, next) => {
