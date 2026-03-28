@@ -138,6 +138,15 @@ export async function selectCandidate(email, selection) {
   return res.json();
 }
 
+// Get all pending admin requests
+export async function getAdminRequests() {
+  const res = await fetch(`${API_BASE}/api/admin/requests`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error("Failed to fetch requests");
+  return res.json();
+}
+
 // Approve or reject admin request (Promote/Demote role)
 export async function approveUserRole(id, role) {
   const res = await fetch(`${API_BASE}/api/admin/approve-role/${id}`, {
@@ -226,5 +235,6 @@ export default {
   getAdminRetakeRequests,
   handleRetakeRequestAction,
   getAuthMe,
-  approveUserRole
+  approveUserRole,
+  getAdminRequests
 };
