@@ -135,7 +135,8 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
                              updatedUser.isAdmin !== user.isAdmin || 
                              updatedUser.testTaken !== user.testTaken ||
                              updatedUser.resumeUploaded !== user.resumeUploaded ||
-                             updatedUser.selection !== user.selection;
+                             updatedUser.selection !== user.selection ||
+                             updatedUser.canRetake !== user.canRetake;
 
           if (hasChanged) {
             localStorage.setItem("user", JSON.stringify(updatedUser));

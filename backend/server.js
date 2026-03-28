@@ -365,11 +365,18 @@ const isAdmin = (req, res, next) => {
 			// Update request status
 			await retakeRequestsCollection.updateOne({ _id: new ObjectId(id) }, { $set: { status: 'approved' } });
 			
-			// Enable retake for user
+			// Enable retake for user by resetting their state
+			// We clear score, language, and selection to ensure a fresh experience
 			await usersCollection.updateOne(
 				{ email: request.email },
-				{ $set: { canRetake: true, testTaken: false } }
+				{ 
+					$set: { canRetake: true, testTaken: false },
+					$unset: { score: "", language: "", selection: "" }
+				}
 			);
+
+			// Also remove old record from scores collection
+			await scoresCollection.deleteOne({ email: request.email });
 			
 			res.json({ success: true });
 		} catch (err) {
