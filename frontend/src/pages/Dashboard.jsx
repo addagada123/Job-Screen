@@ -127,6 +127,12 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
 
   // Sync session with backend to detect role updates or retake approvals
   useEffect(() => {
+    // REDIRECT: If user is admin, they shouldn't be in the candidate dashboard
+    if (user && (user.role === 'admin' || user.isAdmin)) {
+      navigate("/dashboard/admin-scores");
+      return;
+    }
+
     const syncUser = () => {
       if (user) {
         getAuthMe()
@@ -303,11 +309,20 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
             }} />
           } />
           <Route path="results" element={<Results />} />
-          <Route path="admin-scores" element={<AdminScores />} />
-          <Route path="admin-analytics" element={<AdminAnalytics />} />
-          <Route path="admin-requests" element={<AdminRequests />} />
-          <Route path="admin-users" element={<AdminUsers />} />
-          <Route path="admin-retake-requests" element={<AdminRetakeRequests />} />
+          
+          {/* Admin Routes (Only accessible by admin role) */}
+          {(user?.role === 'admin' || user?.isAdmin) && (
+            <>
+              <Route path="admin-scores" element={<AdminScores />} />
+              <Route path="admin-analytics" element={<AdminAnalytics />} />
+              <Route path="admin-requests" element={<AdminRequests />} />
+              <Route path="admin-users" element={<AdminUsers />} />
+              <Route path="admin-retake-requests" element={<AdminRetakeRequests />} />
+            </>
+          )}
+
+          {/* Universal fallback for admins or users trying to cross-navigate */}
+          <Route path="*" element={<Navigate to={user?.role === 'admin' || user?.isAdmin ? '/dashboard/admin-scores' : '/dashboard/overview'} replace />} />
         </Routes>
         <Outlet />
 

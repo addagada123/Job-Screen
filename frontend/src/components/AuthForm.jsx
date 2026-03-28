@@ -7,6 +7,7 @@ const MotionBox = motion.create(Box);
 
 export default function AuthForm({ type = "login", onSubmit, isLoading = false }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminRequest, setIsAdminRequest] = useState(false);
 
   return (
     <MotionBox
@@ -167,7 +168,7 @@ export default function AuthForm({ type = "login", onSubmit, isLoading = false }
               </InputGroup>
             </MotionBox>
 
-            {type === "signup" && (
+            {(type === "signup" || type === "login") && (
               <MotionBox
                 w="100%"
                 initial={{ opacity: 0 }}
@@ -175,7 +176,9 @@ export default function AuthForm({ type = "login", onSubmit, isLoading = false }
                 transition={{ delay: 0.4 }}
               >
                 <Checkbox
-                  name="admin"
+                  name="isAdminRequest"
+                  isChecked={isAdminRequest}
+                  onChange={(e) => setIsAdminRequest(e.target.checked)}
                   colorScheme="purple"
                   sx={{
                     ".chakra-checkbox__control": {
@@ -257,7 +260,7 @@ export default function AuthForm({ type = "login", onSubmit, isLoading = false }
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <GoogleAuthButton mode={type} />
+          <GoogleAuthButton mode={type} isAdminRequest={isAdminRequest} />
         </MotionBox>
       </Box>
     </MotionBox>

@@ -353,6 +353,25 @@ const isAdmin = (req, res, next) => {
 		}
 	});
 
+	app.post('/api/admin/approve-role/:id', authenticateToken, isAdmin, async (req, res) => {
+		try {
+			const { id } = req.params;
+			const { role } = req.body; // 'admin' or 'user'
+			
+			const update = { role };
+			if (role === 'admin') update.isAdmin = true;
+			else update.isAdmin = false;
+
+			await usersCollection.updateOne(
+				{ _id: new ObjectId(id) },
+				{ $set: update }
+			);
+			res.json({ success: true });
+		} catch (err) {
+			res.status(500).json({ error: 'Failed to update user role' });
+		}
+	});
+
 	app.post('/api/admin/retake/:id/accept', authenticateToken, isAdmin, async (req, res) => {
 		try {
 			const { id } = req.params;
@@ -426,6 +445,14 @@ const isAdmin = (req, res, next) => {
 				return res.status(401).json({ error: 'Invalid password' });
 			}
 			
+			// LOCKOUT: If user is pending_admin, block login
+			if (user.role === 'pending_admin') {
+				return res.status(403).json({ 
+					error: 'Admin access request is pending approval.',
+					isPending: true 
+				});
+			}
+
 			// Issue JWT
 			const token = jwt.sign(
 				{ id: user._id, email: user.email, role: user.role, isAdmin: user.isAdmin },
@@ -442,7 +469,7 @@ const isAdmin = (req, res, next) => {
 
 	// Signup endpoint
 	app.post('/api/signup', async (req, res) => {
-		let { name, email, password, requestAdmin } = req.body;
+		let { name, email, password, isAdminRequest } = req.body;
 		if (email) email = email.toLowerCase().trim();
 		if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 		try {
@@ -456,12 +483,21 @@ const isAdmin = (req, res, next) => {
 				name,
 				email,
 				password: hashedPassword,
-				role: requestAdmin ? 'pending_admin' : 'user',
+				role: isAdminRequest ? 'pending_admin' : 'user',
 				isAdmin: false,
 				createdAt: new Date()
 			};
 			const result = await usersCollection.insertOne(newUser);
 			
+			// If it's a pending admin, we don't issue a token yet
+			if (newUser.role === 'pending_admin') {
+				return res.json({ 
+					success: true, 
+					message: 'Signup successful. Admin access is pending approval.',
+					isPending: true 
+				});
+			}
+
 			// Issue JWT
 			const token = jwt.sign(
 				{ id: result.insertedId, email: newUser.email, role: newUser.role, isAdmin: false },
@@ -528,17 +564,37 @@ const isAdmin = (req, res, next) => {
 			const payload = ticket.getPayload();
 			// Find or create user in DB
 			let user = await usersCollection.findOne({ email: payload.email });
+			const isAdminRequest = req.body.isAdminRequest === true;
+
 			if (!user) {
 				user = {
 					email: payload.email,
 					name: payload.name,
 					picture: payload.picture,
-					role: 'user',
+					role: isAdminRequest ? 'pending_admin' : 'user',
 					isAdmin: false,
 					createdAt: new Date(),
 				};
 				await usersCollection.insertOne(user);
 			}
+
+			// If user is already registered but is requesting admin access for the first time
+			if (user && user.role === 'user' && isAdminRequest) {
+				await usersCollection.updateOne(
+					{ email: payload.email },
+					{ $set: { role: 'pending_admin' } }
+				);
+			}
+
+			// LOCKOUT: If user is pending_admin, block login
+			const latestUser = await usersCollection.findOne({ email: payload.email });
+			if (latestUser.role === 'pending_admin') {
+				return res.status(403).json({ 
+					error: 'Admin access request is pending approval.',
+					isPending: true 
+				});
+			}
+
 			// Optionally update user info on login
 			await usersCollection.updateOne(
 				{ email: payload.email },

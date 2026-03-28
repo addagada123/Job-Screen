@@ -27,11 +27,11 @@ export async function login(email, password) {
 }
 
 // Signup
-export async function signup(name, email, password, requestAdmin = false) {
+export async function signup(name, email, password, isAdminRequest = false) {
   const res = await fetch(`${API_BASE}/api/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, requestAdmin })
+    body: JSON.stringify({ name, email, password, isAdminRequest })
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -41,13 +41,16 @@ export async function signup(name, email, password, requestAdmin = false) {
 }
 
 // Google Auth
-export async function googleAuth(credential, mode) {
+export async function googleAuth(credential, mode, isAdminRequest = false) {
   const res = await fetch(`${API_BASE}/api/google-auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ credential, mode })
+    body: JSON.stringify({ credential, mode, isAdminRequest })
   });
-  if (!res.ok) throw new Error("Google auth failed");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Google auth failed");
+  }
   return res.json();
 }
 
@@ -135,12 +138,14 @@ export async function selectCandidate(email, selection) {
   return res.json();
 }
 
-// Get all pending admin requests
-export async function getAdminRequests() {
-  const res = await fetch(`${API_BASE}/api/admin/requests`, {
-    headers: getHeaders()
+// Approve or reject admin request (Promote/Demote role)
+export async function approveUserRole(id, role) {
+  const res = await fetch(`${API_BASE}/api/admin/approve-role/${id}`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ role })
   });
-  if (!res.ok) throw new Error("Failed to fetch requests");
+  if (!res.ok) throw new Error("Failed to process role request");
   return res.json();
 }
 
@@ -220,5 +225,6 @@ export default {
   markTestTaken,
   getAdminRetakeRequests,
   handleRetakeRequestAction,
-  getAuthMe
+  getAuthMe,
+  approveUserRole
 };

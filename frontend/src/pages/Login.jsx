@@ -24,9 +24,21 @@ export default function Login({ setUser, setTestTaken }) {
       setUser(data.user);
       setTestTaken(!!data.user.testTaken);
       toast({ title: "Sign in successful!", status: "success", duration: 1500 });
-      navigate("/dashboard");
+      
+      // Automatic role redirection
+      if (data.user.role === 'admin' || data.user.isAdmin) {
+        navigate("/dashboard/admin-scores"); // Ensure admin lands on admin route inside dashboard
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      toast({ title: "Sign in failed", description: err.message, status: "error", duration: 1500 });
+      const isPending = err.message && err.message.includes('pending approval');
+      toast({ 
+        title: isPending ? "Access Pending" : "Sign in failed", 
+        description: err.message, 
+        status: isPending ? "warning" : "error", 
+        duration: 3000 
+      });
     } finally {
       setLoading(false);
     }

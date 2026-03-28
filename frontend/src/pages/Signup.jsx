@@ -18,14 +18,14 @@ export default function Signup({ setUser, setTestTaken }) {
     const name = form.name.value;
     const email = form.email.value;
     const password = form.password.value;
-    const requestAdmin = form.admin?.checked;
+    const isAdminRequest = form.isAdminRequest?.checked;
     setLoading(true);
     try {
-      const data = await signup(name, email, password, requestAdmin);
+      const data = await signup(name, email, password, isAdminRequest);
       // data is { user, token }
-      if (data.user?.role === 'pending_admin') {
-        setWaitMsg("Wait for admin to approve you.");
-        toast({ title: "Admin request submitted", description: "Please wait for approval", status: "info", duration: 1500 });
+      if (data.isPending || data.user?.role === 'pending_admin') {
+        setWaitMsg("Your admin access request is pending approval. Please contact a master administrator.");
+        toast({ title: "Request Submitted", description: "Admin access is pending approval.", status: "info", duration: 3000 });
       } else {
         localStorage.setItem("user", JSON.stringify(data.user));
         if (data.token) localStorage.setItem("token", data.token);

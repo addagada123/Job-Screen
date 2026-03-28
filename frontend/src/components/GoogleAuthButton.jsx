@@ -3,7 +3,7 @@ import { useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { googleAuth } from '../api';
 
-export default function GoogleAuthButton({ mode = 'login' }) {
+export default function GoogleAuthButton({ mode = 'login', isAdminRequest = false }) {
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -11,7 +11,7 @@ export default function GoogleAuthButton({ mode = 'login' }) {
     <GoogleLogin
       onSuccess={async (credentialResponse) => {
         try {
-          const result = await googleAuth(credentialResponse.credential, mode);
+          const result = await googleAuth(credentialResponse.credential, mode, isAdminRequest);
           if (result && result.user) {
             localStorage.setItem("user", JSON.stringify(result.user));
             if (result.token) localStorage.setItem("token", result.token);
