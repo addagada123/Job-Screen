@@ -367,8 +367,8 @@ const isAdmin = (req, res, next) => {
 			await usersCollection.updateOne(
 				{ email: request.email },
 				{ 
-					$set: { canRetake: true, testTaken: false },
-					$unset: { score: "", language: "", selection: "", resume: "", skills: "" }
+					$set: { canRetake: true, testTaken: false, resume: "", skills: [] },
+					$unset: { score: "", language: "", selection: "" }
 				}
 			);
 

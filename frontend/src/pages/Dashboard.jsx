@@ -174,7 +174,7 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
     const interval = setInterval(syncUser, 10000);
 
     return () => clearInterval(interval);
-  }, [location.pathname]); // Keep triggering on navigation too for immediate updates
+  }, [location.pathname, user]); // Add user to dependencies to prevent closure bug
 
   useEffect(() => {
     if (!user) {
@@ -273,7 +273,7 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
           <Route path="" element={
             <DashboardHome
               user={user}
-              resumeUploaded={resumeUploaded || user?.resumeUploaded}
+              resumeUploaded={user?.resumeUploaded ?? resumeUploaded}
               testTaken={testTaken}
               onUploadResume={() => navigate("/dashboard/resume")}
               onTakeTest={() => {
