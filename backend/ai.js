@@ -114,31 +114,42 @@ router.post('/evaluate', authenticateToken, async (req, res) => {
     // If generating a question
     if (type === "question") {
       const timestamp = Date.now();
+      const tradeContext = `
+        KNOWLEDGE BASE:
+        - ELECTRICAL: Fault isolation, NEC codes, LOTO (Lockout/Tagout), 480V/240V/120V systems, multimeter use, grounding.
+        - HVAC: Refrigeration cycle, BRAZING, airflow diagnostics, manifold gauges, short cycling, refrigerant types.
+        - PLUMBING: DWV systems, venting, pressure tests, soldering, P-traps, rough-in standards.
+        - WELDING/FAB: Joint prep, MIG/TIG/STICK, bead consistency, shielding gas, thermal cutting, metallurgy basics.
+        - GENERAL SAFETY: OSHA-10 fundamentals, PPE selection, workplace hazards, emergency shut-off.
+      `;
+
       if (skills.length > 0) {
-        usedPrompt = `You are a professional technical interviewer for skilled trades. [Session ID: ${timestamp}]. 
-        Generate a single unique, highly technical situational or protocol-based interview question relevant STRICTLY to these candidate skills: ${skills.join(", ")}. 
-        CRITICAL VARIETY: Think of a specific tool, safety standard, or troubleshooting scenario. Every question must be different. NEVER ask generic behavioral or general knowledge questions. 
-        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
+        usedPrompt = `You are a Master Trade Foreman and Safety Inspector with 20 years of field experience. [Salt: ${timestamp}]. 
+        YOUR DATABASE: ${tradeContext}
+        MISSION: Test the candidate on these skills: ${skills.join(", ")}. 
+        RULE: Map their skills to the DATABASE above. Generate a SINGLE unique, highly technical situational or protocol-based question. 
+        Focus on: Specific tools (e.g. micrometer, manifold), safety standards (LOTO), or troubleshooting a high-stakes field problem. 
+        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific trade category"}. No markdown.`;
       } else {
-        usedPrompt = `You are a professional technical interviewer. [Session ID: ${timestamp}]. 
-        Generate a single unique technical and situational interview question for a skilled labor role. Focus on a specific workplace safety or technical problem-solving scenario. 
+        usedPrompt = `You are a Master Trade Foreman. [Salt: ${timestamp}]. 
+        YOUR DATABASE: ${tradeContext}
+        MISSION: Generate a single unique technical situational question for a skilled laborer. Focus on workplace safety or tool-based problem solving. 
         Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
       }
     }
     // If evaluating, include language and context
     if (type === "evaluation") {
-      usedPrompt = `You are evaluating an interview answer.
-Question Context: "${questionText || 'General interview question'}"
-Candidate's Answer: "${prompt}"
-Language used: ${language}
+      usedPrompt = `You are a Master Trade Examiner. Evaluate this candidate's answer based on TECHNICAL ACCURACY and SAFETY protocols for skilled trades.
+      Question: "${questionText || 'General interview question'}"
+      Answer: "${prompt}"
+      Language: ${language}
 
-Task: Determine how relevant the candidate's answer is to the context of the question. 
-Respond ONLY with valid JSON exactly like this:
-{
-  "relevancy": <number between 0 and 100>,
-  "aiText": "<brief feedback in ${language}>"
-}
-Do not include any other text or markdown block markers.`;
+      SCORING CRITERIA:
+      1. Technical Correctness (Does it follow trade standards?)
+      2. Safety Focus (Does it mention PPE or LOTO if relevant?)
+      3. Terminology (Does it use correct jargon like "multimeter", "manifold", "bead", "grounding"?)
+
+      Respond ONLY with direct JSON: { "relevancy": <0-100>, "aiText": "<brief technical feedback in ${language}>" }. No markdown.`;
     }
 
     // Add random salt to forcing AI variety
