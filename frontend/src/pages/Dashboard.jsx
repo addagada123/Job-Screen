@@ -170,8 +170,8 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
     // Initial sync
     syncUser();
 
-    // Background polling every 30 seconds for role/status changes
-    const interval = setInterval(syncUser, 30000);
+    // Background polling every 10 seconds for user/role changes
+    const interval = setInterval(syncUser, 10000);
 
     return () => clearInterval(interval);
   }, [location.pathname]); // Keep triggering on navigation too for immediate updates
@@ -273,7 +273,7 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
           <Route path="" element={
             <DashboardHome
               user={user}
-              resumeUploaded={resumeUploaded}
+              resumeUploaded={resumeUploaded || user?.resumeUploaded}
               testTaken={testTaken}
               onUploadResume={() => navigate("/dashboard/resume")}
               onTakeTest={() => {
