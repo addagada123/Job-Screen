@@ -125,36 +125,46 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
   // This allows the "Assessment Completed" view to be framed within the dashboard
   const isTestRoute = location.pathname.includes("/test") && !testTaken;
 
-  // Sync session with backend to detect role updates (e.g. admin approval)
+  // Sync session with backend to detect role updates or retake approvals
   useEffect(() => {
-    if (user) {
-      getAuthMe()
-        .then(updatedUser => {
-          // If role, admin status, resume status, or selection status changed, update local state
-          const hasChanged = updatedUser.role !== user.role || 
-                             updatedUser.isAdmin !== user.isAdmin || 
-                             updatedUser.testTaken !== user.testTaken ||
-                             updatedUser.resumeUploaded !== user.resumeUploaded ||
-                             updatedUser.selection !== user.selection ||
-                             updatedUser.canRetake !== user.canRetake;
+    const syncUser = () => {
+      if (user) {
+        getAuthMe()
+          .then(updatedUser => {
+            // Check for changes to trigger local state update
+            const hasChanged = updatedUser.role !== user.role || 
+                               updatedUser.isAdmin !== user.isAdmin || 
+                               updatedUser.testTaken !== user.testTaken ||
+                               updatedUser.resumeUploaded !== user.resumeUploaded ||
+                               updatedUser.selection !== user.selection ||
+                               updatedUser.canRetake !== user.canRetake;
 
-          if (hasChanged) {
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-            if (updatedUser.resumeUploaded) localStorage.setItem("resumeUploaded", "true");
-            setUser(updatedUser);
-            if (updatedUser.testTaken !== undefined) setTestTaken(!!updatedUser.testTaken);
-          }
-        })
-        .catch(err => {
-          console.warn("Session sync failed:", err.message);
-          if (err.message.includes("401") || err.message.includes("403")) {
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-            navigate("/login");
-          }
-        });
-    }
-  }, [location.pathname]);
+            if (hasChanged) {
+              localStorage.setItem("user", JSON.stringify(updatedUser));
+              if (updatedUser.resumeUploaded) localStorage.setItem("resumeUploaded", "true");
+              setUser(updatedUser);
+              if (updatedUser.testTaken !== undefined) setTestTaken(!!updatedUser.testTaken);
+            }
+          })
+          .catch(err => {
+            console.warn("Session sync failed:", err.message);
+            if (err.message.includes("401") || err.message.includes("403")) {
+              localStorage.removeItem("user");
+              localStorage.removeItem("token");
+              navigate("/login");
+            }
+          });
+      }
+    };
+
+    // Initial sync
+    syncUser();
+
+    // Background polling every 30 seconds for role/status changes
+    const interval = setInterval(syncUser, 30000);
+
+    return () => clearInterval(interval);
+  }, [location.pathname]); // Keep triggering on navigation too for immediate updates
 
   useEffect(() => {
     if (!user) {

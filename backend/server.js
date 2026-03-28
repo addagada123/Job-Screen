@@ -254,7 +254,7 @@ const isAdmin = (req, res, next) => {
 		try {
 			const result = await usersCollection.updateOne(
 				{ _id: new ObjectId(req.params.id) },
-				{ $set: { role } }
+				{ $set: { role, isAdmin: role === 'admin' } }
 			);
 			if (result.matchedCount === 0) {
 				return res.status(404).json({ error: 'User not found' });
