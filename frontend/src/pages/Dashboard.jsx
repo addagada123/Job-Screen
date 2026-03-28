@@ -127,10 +127,13 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
 
   // Sync session with backend to detect role updates or retake approvals
   useEffect(() => {
-    // REDIRECT: If user is admin, they shouldn't be in the candidate dashboard
+    // REDIRECT: Prevent admins from accessing candidate routes, but allow them to switch admin tabs freely
     if (user && (user.role === 'admin' || user.isAdmin)) {
-      navigate("/dashboard/admin-scores");
-      return;
+      const isCandidateRoute = !location.pathname.includes('/admin-');
+      if (isCandidateRoute) {
+        navigate("/dashboard/admin-scores", { replace: true });
+        return;
+      }
     }
 
     const syncUser = () => {
