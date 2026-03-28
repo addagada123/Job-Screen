@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: job-screen
+    runtime: node
+    plan: free # or standard
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: MONGODB_URI
+        sync: false # Set in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false # Set in Render Dashboard
+      - key: OPENAI_API_KEY
+        sync: false # Set in Render Dashboard (optional if using Gemini)
+      - key: DEEPSEEK_API_KEY
+        sync: false # Set in Render Dashboard (optional)
+      - key: GOOGLE_CLIENT_ID
+        sync: false # Set in Render Dashboard (for backend OAuth)
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false # Set in Render Dashboard (for frontend Auth button)
+      - key: PORT
+        value: 10000

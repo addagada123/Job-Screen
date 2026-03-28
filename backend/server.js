@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const { OAuth2Client } = require('google-auth-library');
@@ -549,6 +550,14 @@ const isAdmin = (req, res, next) => {
 		} catch (err) {
 			res.status(401).json({ error: 'Invalid Google credential', details: err.message });
 		}
+	});
+
+	// Serve static assets from frontend/dist
+	app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+	// Catch-all route to serve index.html for React Router (Single Page Application)
+	app.get('*', (req, res) => {
+		res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 	});
 
 	// Start server (single instance)
