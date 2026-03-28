@@ -251,7 +251,7 @@ export default function Test({ user, onComplete }) {
     setVoiceAnswer("");
     try {
       const { skills } = getSkillsAndLanguage();
-      const q = await generateQuestion("openai", skills, selectedLanguage);
+      const q = await generateQuestion("auto", skills, selectedLanguage);
       setQuestion(prev => ({
         ...prev,
         text: q.text || "No question available.",
@@ -303,7 +303,7 @@ export default function Test({ user, onComplete }) {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(answer, "openai", language, question.text);
+      const result = await evaluateAnswer(answer, "auto", language, question.text);
       toast({ title: "Answer Submitted!", status: "success", duration: 1500, isClosable: true });
       // Enforce 70% context relevancy threshold
       const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
@@ -530,7 +530,7 @@ export default function Test({ user, onComplete }) {
     setLoading(true);
     try {
       const { language } = getSkillsAndLanguage();
-      const result = await evaluateAnswer(voiceAnswer, "openai", language, question.text);
+      const result = await evaluateAnswer(voiceAnswer, "auto", language, question.text);
       toast({ title: "Answer Submitted!", status: "success", duration: 1500, isClosable: true });
       const relevancy = typeof result.relevancy === "number" ? result.relevancy : 0;
       if (relevancy >= 70) {

@@ -38,18 +38,7 @@ export async function generateQuestion(model = "openai", skills = [], language =
   }
 
   try {
-    // Attempt primary model
-    let data;
-    try {
-      data = await tryFetch(model);
-    } catch (err) {
-      if (model === "openai") {
-        console.warn("Primary AI (OpenAI) failed, attempting failover to Gemini...");
-        data = await tryFetch("gemini");
-      } else {
-        throw err;
-      }
-    }
+    const data = await tryFetch("auto");
 
     if (data && data.text) {
       return {
