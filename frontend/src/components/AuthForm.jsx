@@ -168,7 +168,7 @@ export default function AuthForm({ type = "login", onSubmit, isLoading = false }
               </InputGroup>
             </MotionBox>
 
-            {(type === "signup" || type === "login") && (
+            {type === "signup" && (
               <MotionBox
                 w="100%"
                 initial={{ opacity: 0 }}
