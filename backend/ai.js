@@ -18,7 +18,7 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 async function askOpenAI(prompt, language = "English") {
   const systemPrompt = `You are an expert interviewer. All responses must be in ${language}.`;
   const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt }
@@ -32,7 +32,7 @@ async function askOpenAI(prompt, language = "English") {
 // --- Helper: Gemini ---
 async function askGemini(prompt, language = "English") {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   const result = await model.generateContent(`Respond in ${language}. ${prompt}`);
   return result.response.text();
 }
