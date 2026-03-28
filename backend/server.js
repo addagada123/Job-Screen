@@ -16,7 +16,13 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const app = express();
-const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://job-screen.onrender.com'];
+const allowedOrigins = [
+	'http://localhost:5173', 
+	'http://127.0.0.1:5173', 
+	'https://job-screen.onrender.com',
+	process.env.RENDER_EXTERNAL_URL
+].filter(Boolean);
+
 app.use(cors({
 	origin: (origin, callback) => {
 		if (!origin || allowedOrigins.includes(origin)) {
