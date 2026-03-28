@@ -16,17 +16,24 @@ export default function Results() {
       return;
     }
 
+    // If user needs to take a test (e.g. they just signed up or retake approved)
+    if (!user.testTaken) {
+      setResultMsg("Please complete the assessment to view your results.");
+      setLoading(false);
+      return;
+    }
+
     getUserStatus(user.email)
       .then(data => {
         if (data.selection === "selected") {
-          setResultMsg("Congratulations u have been selected for next round");
+          setResultMsg("Congratulations! You have been selected for the next round.");
         } else if (data.selection === "rejected") {
-          setResultMsg("Better luck next time");
+          setResultMsg("Thank you for your interest. We have decided to move forward with other candidates at this time.");
         } else {
-          setResultMsg("Waiting for result");
+          setResultMsg("Your results are currently under review. Please check back soon.");
         }
       })
-      .catch(() => setResultMsg("Waiting for result"))
+      .catch(() => setResultMsg("Unable to fetch status. Please try again later."))
       .finally(() => setLoading(false));
   }, []);
 

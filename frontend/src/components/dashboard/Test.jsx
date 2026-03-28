@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 
 const MotionBox = motion.create ? motion.create(Box) : motion(Box);
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://job-screen.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 export default function Test({ user, onComplete }) {
   const [testStarted, setTestStarted] = useState(false);
