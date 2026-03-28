@@ -559,6 +559,7 @@ const isAdmin = (req, res, next) => {
 
 	// Catch-all route to serve index.html for React Router (Single Page Application)
 	app.get('*', (req, res) => {
+		res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 		res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 	});
 

@@ -1,7 +1,7 @@
 // API utility for JobScreen frontend
 // Set VITE_API_BASE to your backend URL in environment variables
 // For production: https://job-screen-backend.onrender.com
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5001";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 // Helper to get headers with JWT token
 function getHeaders(contentType = "application/json") {
