@@ -80,7 +80,8 @@ const toUserResponse = (user) => {
 		testTaken: user.testTaken || false,
 		resumeUploaded: !!(user.resume || user.skills?.length > 0),
 		selection: user.selection || null,
-		isAdmin: user.role === 'admin' || user.isAdmin === true
+		isAdmin: user.role === 'admin' || user.isAdmin === true,
+		retakePending: user.retakePending === true
 	};
 };
 
@@ -331,6 +332,7 @@ const isAdmin = (req, res, next) => {
 				createdAt: new Date()
 			};
 			await retakeRequestsCollection.insertOne(newRequest);
+			await usersCollection.updateOne({ email }, { $set: { retakePending: true } });
 			res.json({ success: true, message: 'Retake request submitted successfully' });
 		} catch (err) {
 			console.error('Retake request error:', err);
@@ -387,7 +389,7 @@ const isAdmin = (req, res, next) => {
 				{ email: request.email },
 				{ 
 					$set: { canRetake: true, testTaken: false, resume: "", skills: [] },
-					$unset: { score: "", language: "", selection: "" }
+					$unset: { score: "", language: "", selection: "", retakePending: "" }
 				}
 			);
 
@@ -403,11 +405,15 @@ const isAdmin = (req, res, next) => {
 	app.post('/api/admin/retake/:id/reject', authenticateToken, isAdmin, async (req, res) => {
 		try {
 			const { id } = req.params;
-			const result = await retakeRequestsCollection.updateOne(
-				{ _id: new ObjectId(id), status: 'pending' },
+			const request = await retakeRequestsCollection.findOne({ _id: new ObjectId(id), status: 'pending' });
+			if (!request) return res.status(404).json({ error: 'Request not found' });
+			
+			await retakeRequestsCollection.updateOne(
+				{ _id: new ObjectId(id) },
 				{ $set: { status: 'rejected' } }
 			);
-			if (result.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
+			
+			await usersCollection.updateOne({ email: request.email }, { $unset: { retakePending: "" } });
 			res.json({ success: true });
 		} catch (err) {
 			res.status(500).json({ error: 'Failed to reject retake' });

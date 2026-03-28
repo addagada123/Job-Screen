@@ -404,7 +404,7 @@ export default function Test({ user, onComplete }) {
         {!forceExit && (
           <Box bg="rgba(0,0,0,0.2)" p={6} borderRadius="xl" mb={6}>
             <Heading size="md" color="white" mb={4}>Request Retake</Heading>
-            {retakeSubmitted ? (
+            {(user?.retakePending || retakeSubmitted) ? (
                <Alert status="success" borderRadius="md" bg="green.900" color="green.100"><AlertIcon />Your request for a retake has been submitted successfully. Please wait for admin approval.</Alert>
             ) : (
               <>
