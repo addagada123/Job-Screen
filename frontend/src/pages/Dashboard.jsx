@@ -141,7 +141,17 @@ export default function Dashboard({ user, setUser, hideSidebar, testTaken, setTe
 
             if (hasChanged) {
               localStorage.setItem("user", JSON.stringify(updatedUser));
-              if (updatedUser.resumeUploaded) localStorage.setItem("resumeUploaded", "true");
+              
+              // Sync resume status
+              if (updatedUser.resumeUploaded) {
+                localStorage.setItem("resumeUploaded", "true");
+                setResumeUploaded(true);
+              } else {
+                localStorage.removeItem("resumeUploaded");
+                setResumeUploaded(false);
+              }
+
+              // Sync other user state
               setUser(updatedUser);
               if (updatedUser.testTaken !== undefined) setTestTaken(!!updatedUser.testTaken);
             }
