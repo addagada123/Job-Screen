@@ -115,7 +115,7 @@ router.post('/evaluate', authenticateToken, async (req, res) => {
     if (type === "question") {
       const timestamp = Date.now();
       const tradeContext = `
-        KNOWLEDGE BASE:
+        MASTER TRADE STANDARDS:
         - ELECTRICAL: Fault isolation, NEC codes, LOTO (Lockout/Tagout), 480V/240V/120V systems, multimeter use, grounding.
         - HVAC: Refrigeration cycle, BRAZING, airflow diagnostics, manifold gauges, short cycling, refrigerant types.
         - PLUMBING: DWV systems, venting, pressure tests, soldering, P-traps, rough-in standards.
@@ -123,33 +123,37 @@ router.post('/evaluate', authenticateToken, async (req, res) => {
         - GENERAL SAFETY: OSHA-10 fundamentals, PPE selection, workplace hazards, emergency shut-off.
       `;
 
-      if (skills.length > 0) {
-        usedPrompt = `You are a Master Trade Foreman and Safety Inspector with 20 years of field experience. [Salt: ${timestamp}]. 
-        YOUR DATABASE: ${tradeContext}
-        MISSION: Test the candidate on these skills: ${skills.join(", ")}. 
-        RULE: Map their skills to the DATABASE above. Generate a SINGLE unique, highly technical situational or protocol-based question. 
-        Focus on: Specific tools (e.g. micrometer, manifold), safety standards (LOTO), or troubleshooting a high-stakes field problem. 
-        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific trade category"}. No markdown.`;
+      if (skills && skills.length > 0) {
+        usedPrompt = `You are a Strict Master Trade Foreman and Technical Proctor. [Session Seed: ${timestamp}]. 
+        YOUR RULES:
+        1. GENERATE A QUESTION ONLY FOR THESE SPECIFIC SKILLS: ${skills.join(", ")}.
+        2. DO NOT ASK ABOUT ANY TRADE NOT LISTED IN THE SKILLS ABOVE. 
+        3. DO NOT ASK GENERIC LABOR OR BEHAVIORAL QUESTIONS.
+        4. IF THE SKILL IS "WELDING", THE QUESTION MUST BE TECHNICAL WELDING ONLY.
+        5. Map the skills ONLY to the relevant sections in your MASTER STANDARDS: ${tradeContext}
+        MISSION: Generate a SINGLE highly technical, situational "Break-Fix" question. 
+        Respond ONLY with direct JSON: {"text": "specific technical question", "category": "trade category"}. No markdown.`;
       } else {
-        usedPrompt = `You are a Master Trade Foreman. [Salt: ${timestamp}]. 
-        YOUR DATABASE: ${tradeContext}
-        MISSION: Generate a single unique technical situational question for a skilled laborer. Focus on workplace safety or tool-based problem solving. 
-        Respond ONLY with direct JSON: {"text": "technical question", "category": "specific category"}. No markdown.`;
+        usedPrompt = `You are a Safety and Site Awareness Inspector. [Session Seed: ${timestamp}]. 
+        MISSION: Generate a single technical situational question regarding generalized industrial safety and tool usage for an entry-level skilled laborer. 
+        Respond ONLY with direct JSON: {"text": "safety question", "category": "General Safety"}. No markdown.`;
       }
     }
-    // If evaluating, include language and context
+
+    // If evaluating
     if (type === "evaluation") {
-      usedPrompt = `You are a Master Trade Examiner. Evaluate this candidate's answer based on TECHNICAL ACCURACY and SAFETY protocols for skilled trades.
-      Question: "${questionText || 'General interview question'}"
-      Answer: "${prompt}"
+      usedPrompt = `You are a Ruthless Trade Examiner. Evaluate this candidate's response based on technical procederes and accuracy for the specific skill.
+      Context: ${questionText || 'General technical question'}
+      Skill Requirements: ${skills.length > 0 ? skills.join(", ") : "General Safety Awareness"}
+      Candidate Answer: "${prompt}"
       Language: ${language}
 
-      SCORING CRITERIA:
-      1. Technical Correctness (Does it follow trade standards?)
-      2. Safety Focus (Does it mention PPE or LOTO if relevant?)
-      3. Terminology (Does it use correct jargon like "multimeter", "manifold", "bead", "grounding"?)
+      PENALIZE: 
+      - Vague or non-technical answers.
+      - Ignoring safety protocols (PPE/LOTO) if the scenario is dangerous.
+      - Lack of technical terminology (must use professional trade names for tools/parts).
 
-      Respond ONLY with direct JSON: { "relevancy": <0-100>, "aiText": "<brief technical feedback in ${language}>" }. No markdown.`;
+      Respond ONLY with direct JSON: { "relevancy": <0-100>, "aiText": "<technical trade feedback in ${language}>" }. No markdown.`;
     }
 
     // Add random salt to forcing AI variety
